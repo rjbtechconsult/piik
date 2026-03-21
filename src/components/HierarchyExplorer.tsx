@@ -50,7 +50,7 @@ const formatDate = (dateStr: string) => {
   if (!dateStr) return "";
   try {
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   } catch {
     return "";
   }

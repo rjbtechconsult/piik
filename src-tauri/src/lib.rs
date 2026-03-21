@@ -59,12 +59,23 @@ async fn fetch_azure_teams(organization: String, project: String, token: String)
         .await
         .map_err(|e| e.to_string())?;
 
-    println!("Backend: Teams response status: {}", res.status());
-    if res.status().is_success() {
-        let data: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
-        Ok(data)
+    let status = res.status();
+    let text = res.text().await.map_err(|e| e.to_string())?;
+
+    if status.is_success() {
+        match serde_json::from_str::<serde_json::Value>(&text) {
+            Ok(data) => Ok(data),
+            Err(e) => {
+                println!("DIAGNOSTIC: Failed to decode JSON from success response in fetch_azure_teams.");
+                println!("DIAGNOSTIC: Status: {}", status);
+                println!("DIAGNOSTIC: Body: {}", text);
+                Err(format!("Error decoding response body: {}", e))
+            }
+        }
     } else {
-        Err(format!("Failed to fetch teams: {}", res.status()))
+        println!("DIAGNOSTIC: Request failed in fetch_azure_teams. Status: {}", status);
+        println!("DIAGNOSTIC: Body: {}", text);
+        Err(format!("Failed to fetch teams: {} - {}", status, text))
     }
 }
 
@@ -84,11 +95,23 @@ async fn fetch_azure_iterations(organization: String, project: String, team: Str
         .await
         .map_err(|e| e.to_string())?;
 
-    if res.status().is_success() {
-        let data: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
-        Ok(data)
+    let status = res.status();
+    let text = res.text().await.map_err(|e| e.to_string())?;
+
+    if status.is_success() {
+        match serde_json::from_str::<serde_json::Value>(&text) {
+            Ok(data) => Ok(data),
+            Err(e) => {
+                println!("DIAGNOSTIC: Failed to decode JSON from success response in fetch_azure_iterations.");
+                println!("DIAGNOSTIC: Status: {}", status);
+                println!("DIAGNOSTIC: Body: {}", text);
+                Err(format!("Error decoding response body: {}", e))
+            }
+        }
     } else {
-        Err(format!("Failed to fetch iterations: {}", res.status()))
+        println!("DIAGNOSTIC: Request failed in fetch_azure_iterations. Status: {}", status);
+        println!("DIAGNOSTIC: Body: {}", text);
+        Err(format!("Failed to fetch iterations: {} - {}", status, text))
     }
 }
 
@@ -141,7 +164,21 @@ async fn fetch_azure_hierarchy(organization: String, project: String, team: Stri
             .await
             .map_err(|e| e.to_string())?;
 
-        let iter_data: serde_json::Value = iter_res.json().await.map_err(|e| e.to_string())?;
+        let iter_status = iter_res.status();
+        let iter_text = iter_res.text().await.map_err(|e| e.to_string())?;
+        
+        if !iter_status.is_success() {
+            println!("DIAGNOSTIC: Failed to fetch iterations in fetch_azure_hierarchy. Status: {}", iter_status);
+            println!("DIAGNOSTIC: Body: {}", iter_text);
+            return Err(format!("Failed to fetch iterations: {} - {}", iter_status, iter_text));
+        }
+
+        let iter_data: serde_json::Value = serde_json::from_str(&iter_text).map_err(|e| {
+            println!("DIAGNOSTIC: Failed to decode JSON from success response in fetch_azure_hierarchy (iteration).");
+            println!("DIAGNOSTIC: Body: {}", iter_text);
+            e.to_string()
+        })?;
+
         iter_data["value"][0]["id"].as_str()
             .ok_or_else(|| "No current sprint found for this team.")?.to_string()
     };
@@ -158,7 +195,20 @@ async fn fetch_azure_hierarchy(organization: String, project: String, team: Stri
         .await
         .map_err(|e| e.to_string())?;
 
-    let items_data: serde_json::Value = items_res.json().await.map_err(|e| e.to_string())?;
+    let items_status = items_res.status();
+    let items_text = items_res.text().await.map_err(|e| e.to_string())?;
+
+    if !items_status.is_success() {
+        println!("DIAGNOSTIC: Failed to fetch items in fetch_azure_hierarchy. Status: {}", items_status);
+        println!("DIAGNOSTIC: Body: {}", items_text);
+        return Err(format!("Failed to fetch items: {} - {}", items_status, items_text));
+    }
+
+    let items_data: serde_json::Value = serde_json::from_str(&items_text).map_err(|e| {
+        println!("DIAGNOSTIC: Failed to decode JSON from items response in fetch_azure_hierarchy.");
+        println!("DIAGNOSTIC: Body: {}", items_text);
+        e.to_string()
+    })?;
     println!("Backend: Iteration data received. Keys: {:?}", items_data.as_object().map(|obj| obj.keys().collect::<Vec<_>>()));
     let mut all_ids = std::collections::HashSet::new();
     
@@ -232,7 +282,7 @@ async fn fetch_azure_tasks(organization: String, project: String, token: String)
     
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
-        .user_agent("PulsyTray/0.1.0")
+        .user_agent("Piik/0.1.0")
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -472,8 +522,16 @@ async fn identify_me(organization: String, token: String) -> Result<serde_json::
         .await
         .map_err(|e| e.to_string())?;
 
-    if res.status().is_success() {
-        let data: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
+    let status = res.status();
+    let text = res.text().await.map_err(|e| e.to_string())?;
+
+    if status.is_success() {
+        let data: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
+            println!("DIAGNOSTIC: Failed to decode JSON from success response in identify_me.");
+            println!("DIAGNOSTIC: Body: {}", text);
+            e.to_string()
+        })?;
+
         if let Some(items) = data["workItems"].as_array() {
             if !items.is_empty() {
                 let id = items[0]["id"].as_i64().unwrap_or(0);
@@ -484,7 +542,22 @@ async fn identify_me(organization: String, token: String) -> Result<serde_json::
                         .send()
                         .await
                         .map_err(|e| e.to_string())?;
-                    let item_data: serde_json::Value = item_res.json().await.map_err(|e| e.to_string())?;
+                    
+                    let item_status = item_res.status();
+                    let item_text = item_res.text().await.map_err(|e| e.to_string())?;
+
+                    if !item_status.is_success() {
+                        println!("DIAGNOSTIC: Failed to fetch work item detail in identify_me. Status: {}", item_status);
+                        println!("DIAGNOSTIC: Body: {}", item_text);
+                        return Err(format!("Failed to fetch work item detail: {} - {}", item_status, item_text));
+                    }
+
+                    let item_data: serde_json::Value = serde_json::from_str(&item_text).map_err(|e| {
+                        println!("DIAGNOSTIC: Failed to decode JSON from work item response in identify_me.");
+                        println!("DIAGNOSTIC: Body: {}", item_text);
+                        e.to_string()
+                    })?;
+
                     if let Some(fields) = item_data["fields"].as_object() {
                         if let Some(assigned_to) = fields.get("System.AssignedTo") {
                             return Ok(assigned_to.clone());
@@ -495,7 +568,9 @@ async fn identify_me(organization: String, token: String) -> Result<serde_json::
         }
         Err("No items found assigned to you to identify your identity.".into())
     } else {
-        Err(format!("Failed to identify user: {}", res.status()))
+        println!("DIAGNOSTIC: identify_me request failed. Status: {}", status);
+        println!("DIAGNOSTIC: Body: {}", text);
+        Err(format!("Failed to identify user: {} - {}", status, text))
     }
 }
 
