@@ -645,6 +645,16 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+
+            // Hide window when it loses focus
+            if let Some(window) = app.get_webview_window("main") {
+                let window_clone = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Focused(false) = event {
+                        let _ = window_clone.hide();
+                    }
+                });
+            }
             
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
