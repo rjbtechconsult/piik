@@ -65,7 +65,7 @@ export const Navbar: React.FC = () => {
           borderRadius: '999px'
         }}>
           <a href="#home" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white', fontWeight: 700, fontSize: '1.25rem', textDecoration: 'none' }}>
-            <img src="/icon.png" alt="Piik Logo" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
+            <img src={`${import.meta.env.BASE_URL}icon.png`} alt="Piik Logo" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
             Piik
           </a>
 

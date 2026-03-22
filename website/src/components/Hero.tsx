@@ -54,7 +54,7 @@ export const Hero: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <a href="/Piik.dmg" download="Piik.dmg" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}>
+          <a href={`${import.meta.env.BASE_URL}Piik.dmg`} download="Piik.dmg" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}>
             <Download size={20} />
             Download for macOS
           </a>
