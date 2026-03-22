@@ -85,7 +85,7 @@ export const Navbar: React.FC = () => {
               </a>
             </div>
             
-            <a href="https://github.com/realjblaq/piik" target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white', textDecoration: 'none', padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '999px' }}>
+            <a href="https://github.com/rjbtechconsult/piik" target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white', textDecoration: 'none', padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '999px' }}>
               <Github size={16} />
               GitHub
             </a>
