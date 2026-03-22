@@ -605,13 +605,14 @@ pub fn run() {
             Some(vec!["--hidden"]),
         ))
         .setup(|app| {
+            println!("Backend: Piik is starting up... (Check your Menu Bar for the lightning bolt icon)");
             use tauri::menu::{Menu, MenuItem};
             use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit_i])?;
 
-            let tray_icon = tauri::image::Image::from_path("icons/tray-icon.png")?;
+            let tray_icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray-icon.png"))?;
             let _tray = TrayIconBuilder::with_id("tray")
                 .icon(tray_icon)
                 .icon_as_template(true)

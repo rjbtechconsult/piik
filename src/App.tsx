@@ -7,7 +7,7 @@ import { IterationSelector } from "./components/IterationSelector";
 import { HierarchyExplorer } from "./components/HierarchyExplorer";
 import { CreateItemModal } from "./components/CreateItemModal";
 import { AssigneeSelector } from "./components/AssigneeSelector";
-import { getSetting } from "./lib/db";
+import { getSetting, saveSetting } from "./lib/db";
 import Switch from "./components/Switch";
 import "./App.css";
 
@@ -48,7 +48,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [assigneeFilter, setAssigneeFilter] = useState<string | null>(null);
+  const [assigneeFilter, setAssigneeFilter] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [theme, setTheme] = useState<string>("dark");
@@ -144,6 +144,12 @@ function App() {
     invoke("update_tray_badge", { count: myTasks.length });
   };
 
+  useEffect(() => {
+    if (selectedTeam) {
+      saveSetting("last_selected_team", selectedTeam);
+    }
+  }, [selectedTeam]);
+
   const getEffectiveTheme = () => {
     if (theme === 'system') {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -193,7 +199,14 @@ function App() {
       const teamsData = await invoke<any>("fetch_azure_teams", { organization: org, project, token });
       if (teamsData.value) {
         setTeams(teamsData.value);
-        if (!selectedTeam && teamsData.value.length > 0) {
+        
+        // Try to restore last selected team
+        const lastSelected = await getSetting("last_selected_team");
+        const exists = teamsData.value.find((t: any) => t.name === lastSelected);
+        
+        if (exists) {
+          setSelectedTeam(lastSelected!);
+        } else if (!selectedTeam && teamsData.value.length > 0) {
           setSelectedTeam(teamsData.value[0].name);
         }
       }
@@ -447,6 +460,7 @@ function App() {
     setSelectedTeam("");
     setSelectedIteration(null);
     setSelectedStoryId(null);
+    setAssigneeFilter([]);
     setCurrentUser(null);
     setError(null);
     setShowSettings(false); // Close settings to show landing screen
@@ -523,7 +537,7 @@ function App() {
                 }}
                 disabled={!isConnected}
                 className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
-                title="New Work Item"
+                title="New Story"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
               </button>
@@ -550,7 +564,7 @@ function App() {
                 />
                 <AssigneeSelector
                   teamMembers={teamMembers}
-                  selectedAssignee={assigneeFilter}
+                  selectedAssignees={assigneeFilter}
                   onSelect={setAssigneeFilter}
                   isLoading={isLoading}
                 />
@@ -616,7 +630,7 @@ function App() {
               selectedStoryId={selectedStoryId}
               onSelectStory={setSelectedStoryId}
               activeOnly={activeOnly}
-              assigneeFilter={assigneeFilter}
+              assigneeFilters={assigneeFilter}
               searchQuery={searchQuery}
               onUpdateStatus={handleUpdateStatus}
               onCreateSubItem={(id, title, areaPath, iterationPath) => {

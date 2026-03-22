@@ -24,7 +24,7 @@ interface HierarchyExplorerProps {
   selectedStoryId: number | null;
   onSelectStory: (id: number | null) => void;
   activeOnly: boolean;
-  assigneeFilter: string | null;
+  assigneeFilters: string[];
   searchQuery: string;
   onUpdateStatus: (id: number, newStatus: string) => Promise<void>;
   onCreateSubItem: (id: number, title: string, areaPath: string, iterationPath: string) => void;
@@ -109,10 +109,15 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
             <div className="flex flex-col gap-3 flex-1 min-w-0">
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="text-[11px] font-bold text-[var(--text-dim)] tracking-tight flex items-center gap-1.5">
-                    #{node.item.id} <span className="text-[var(--text-dim)]/50">•</span> Hubtel
-                  </span>
-                  <h3 className="text-[13px] font-bold text-[var(--text-main)] leading-snug group-hover:text-[var(--accent-blue)] transition-colors">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/20 text-[var(--accent-blue)] text-[9px] font-black uppercase tracking-wider border border-[var(--accent-blue)]/30">
+                      Story
+                    </span>
+                    <span className="text-[11px] font-bold text-[var(--text-dim)] tracking-tight flex items-center gap-1.5">
+                      #{node.item.id} <span className="text-[var(--text-dim)]/50">•</span> Hubtel
+                    </span>
+                  </div>
+                  <h3 className="text-[13px] font-bold text-[var(--text-main)] leading-snug group-hover:text-[var(--accent-blue)] transition-colors break-words">
                     {node.item.fields["System.Title"]}
                   </h3>
                 </div>
@@ -232,7 +237,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
           )}
         </div>
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-          <span className={`text-[12px] leading-tight transition-colors ${isActive ? 'text-[var(--text-main)] group-hover:text-[var(--accent-blue)]' : 'text-[var(--text-dim)]'}`}>
+          <span className={`text-[12px] leading-tight transition-colors break-words ${isActive ? 'text-[var(--text-main)] group-hover:text-[var(--accent-blue)]' : 'text-[var(--text-dim)]'}`}>
             {node.item.fields["System.Title"]}
           </span>
           <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -310,16 +315,16 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
   );
 }
 
-const filterHierarchy = (nodes: HierarchyNode[], filter: string | null): HierarchyNode[] => {
-  if (!filter) return nodes;
+const filterHierarchy = (nodes: HierarchyNode[], filters: string[]): HierarchyNode[] => {
+  if (filters.length === 0) return nodes;
 
   return nodes
     .map(node => {
       if (!node.item.fields) return null;
       const assignedTo = node.item.fields["System.AssignedTo"];
-      const matchesSelf = getAssigneeUniqueName(assignedTo) === filter;
+      const matchesSelf = filters.includes(getAssigneeUniqueName(assignedTo));
 
-      const filteredChildren = filterHierarchy(node.children, filter);
+      const filteredChildren = filterHierarchy(node.children, filters);
       const hasMatchingChild = filteredChildren.length > 0;
 
       if (matchesSelf || hasMatchingChild) {
@@ -332,22 +337,22 @@ const filterHierarchy = (nodes: HierarchyNode[], filter: string | null): Hierarc
     })
     .filter((n): n is HierarchyNode => n !== null);
 };
- 
+
 const searchHierarchy = (nodes: HierarchyNode[], query: string, forceMatch = false): HierarchyNode[] => {
   if (!query && !forceMatch) return nodes;
   const q = query.toLowerCase();
- 
+
   return nodes
     .map(node => {
       if (!node.item.fields) return null;
       const title = node.item.fields["System.Title"]?.toLowerCase() || "";
       const id = node.item.id.toString();
       const matchesSelf = forceMatch || title.includes(q) || id.includes(q);
- 
+
       // If this node matches, we force match all its children (show all sub-tasks)
       const filteredChildren = searchHierarchy(node.children, query, matchesSelf);
       const hasMatchingChild = filteredChildren.length > 0;
- 
+
       if (matchesSelf || hasMatchingChild) {
         return {
           ...node,
@@ -365,13 +370,13 @@ export function HierarchyExplorer({
   selectedStoryId,
   onSelectStory,
   activeOnly,
-  assigneeFilter,
+  assigneeFilters,
   searchQuery,
   onUpdateStatus,
   onCreateSubItem
 }: HierarchyExplorerProps) {
   // 1. Filter by Assignee
-  const filteredByAssignee = filterHierarchy(hierarchy, assigneeFilter);
+  const filteredByAssignee = filterHierarchy(hierarchy, assigneeFilters);
 
   // 2. Filter by Search
   const filteredBySearch = searchHierarchy(filteredByAssignee, searchQuery);
@@ -400,10 +405,10 @@ export function HierarchyExplorer({
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></svg>
         <div className="flex flex-col gap-1">
           <p className="text-sm font-bold text-[var(--text-muted)]">
-            {assigneeFilter ? "No matching work items found for this assignee" : "No active work items found"}
+            {assigneeFilters.length > 0 ? "No matching work items found for these assignees" : "No active work items found"}
           </p>
           <p className="text-[10px] text-[var(--text-dim)] italic">
-            {assigneeFilter ? "Try clearing the assignee filter or selecting another user." : "Select an iteration or click \"+\" to create a new task."}
+            {assigneeFilters.length > 0 ? "Try clearing the assignee filter or selecting other users." : "Select an iteration or click \"+\" to create a new task."}
           </p>
         </div>
       </div>
