@@ -69,8 +69,8 @@ export const Navbar: React.FC = () => {
             Piik
           </a>
 
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 'clamp(1rem, 3vw, 2rem)', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 'clamp(0.75rem, 2vw, 1.5rem)', alignItems: 'center' }}>
               <a href="#features" style={navLinkStyle('features')}>
                 Features
                 {activeSection === 'features' && (
@@ -87,7 +87,7 @@ export const Navbar: React.FC = () => {
             
             <a href="https://github.com/rjbtechconsult/piik" target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white', textDecoration: 'none', padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '999px' }}>
               <Github size={16} />
-              GitHub
+              <span className="hide-mobile">GitHub</span>
             </a>
           </div>
         </div>

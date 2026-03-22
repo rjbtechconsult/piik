@@ -49,6 +49,7 @@ export const Hero: React.FC = () => {
         </motion.p>
 
         <motion.div 
+          className="hero-buttons-container"
           style={{ display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'center' }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

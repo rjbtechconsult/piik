@@ -174,3 +174,37 @@ p {
   border: 1px solid rgba(59, 130, 246, 0.2);
   margin-bottom: 1.5rem;
 }
+/* Responsive Utilities */
+@media (max-width: 640px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .glass-panel {
+    padding: 0.5rem 1rem !important;
+  }
+
+  .install-step-container {
+    gap: 1rem !important;
+  }
+
+  .code-container-wrapper {
+    padding: 0.5rem 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .hero-buttons-container {
+    flex-direction: column !important;
+    gap: 1.25rem !important;
+    padding: 0 1rem;
+  }
+
+  .hero-buttons-container .btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}
