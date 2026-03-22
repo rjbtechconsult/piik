@@ -131,13 +131,32 @@ export const Hero: React.FC = () => {
                   <div style={{ color: '#007aff', marginTop: '2px' }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                      <span style={{ fontSize: '9px', fontWeight: 900, background: 'rgba(0,122,255,0.2)', color: '#007aff', padding: '1px 4px', borderRadius: '3px', textTransform: 'uppercase' }}>Story</span>
-                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>#14301 • Piik</span>
-                    </div>
-                    <div style={{ color: 'white', fontSize: '12px', fontWeight: 700, lineHeight: 1.4, marginBottom: '0.75rem' }}>
-                      Implement native macOS menu bar integration
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <span style={{ fontSize: '9px', fontWeight: 900, background: 'rgba(0,122,255,0.2)', color: '#007aff', padding: '1px 4px', borderRadius: '3px', textTransform: 'uppercase' }}>Story</span>
+                          <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>#14301 • Piik</span>
+                        </div>
+                        <div style={{ color: 'white', fontSize: '12px', fontWeight: 700, lineHeight: 1.4, marginBottom: '0.75rem' }}>
+                          Implement native macOS menu bar integration
+                        </div>
+                      </div>
+                      <div style={{ 
+                        flexShrink: 0, 
+                        padding: '2px 6px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px', 
+                        borderRadius: '6px', 
+                        background: 'rgba(0,122,255,0.1)', 
+                        color: '#007aff', 
+                        border: '1px solid rgba(0,122,255,0.2)',
+                        marginTop: '2px'
+                      }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                        <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase' }}>Task</span>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(0,122,255,0.15)', border: '1px solid rgba(0,122,255,0.2)', padding: '2px 8px', borderRadius: '20px' }}>
