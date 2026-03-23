@@ -634,9 +634,6 @@ pub fn run() {
                             if window.is_visible().unwrap_or(false) {
                                 let _ = window.hide();
                             } else {
-                                #[cfg(target_os = "macos")]
-                                macos::set_window_behavior(&window);
-                                
                                 let _ = window.show();
                                 let _ = window.set_focus();
                             }
@@ -658,11 +655,6 @@ pub fn run() {
                         let _ = window_clone.hide();
                     }
                 });
-
-                #[cfg(target_os = "macos")]
-                {
-                    macos::set_window_behavior(&window);
-                }
             }
             
             #[cfg(target_os = "macos")]
@@ -673,40 +665,4 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-#[cfg(target_os = "macos")]
-mod macos {
-    use tauri::{Runtime, WebviewWindow};
-
-    // Raw Objective-C runtime FFI - bypasses objc2's exception handling
-    extern "C" {
-        fn objc_msgSend(obj: *mut std::ffi::c_void, sel: *const std::ffi::c_void, ...) -> *mut std::ffi::c_void;
-        fn sel_registerName(name: *const std::os::raw::c_char) -> *const std::ffi::c_void;
-    }
-
-    pub fn set_window_behavior<R: Runtime>(window: &WebviewWindow<R>) {
-        let window_handle = window.clone();
-        let _ = window.run_on_main_thread(move || {
-            if let Ok(ns_window_ptr) = window_handle.ns_window() {
-                if ns_window_ptr.is_null() {
-                    return;
-                }
-                
-                unsafe {
-                    let ns_window = ns_window_ptr;
-                    
-                    // setCollectionBehavior: CanJoinAllSpaces (1) | MoveToActiveSpace (2)
-                    let sel = sel_registerName(b"setCollectionBehavior:\0".as_ptr() as *const _);
-                    objc_msgSend(ns_window, sel, 3u64);
-                    
-                    // setLevel: NSStatusWindowLevel (25)
-                    let sel = sel_registerName(b"setLevel:\0".as_ptr() as *const _);
-                    objc_msgSend(ns_window, sel, 25i64);
-                    
-                    println!("Backend: macOS window behavior configured successfully");
-                }
-            }
-        });
-    }
 }
