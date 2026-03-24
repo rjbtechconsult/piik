@@ -686,8 +686,10 @@ mod macos {
                 let behavior: usize = 129;
                 let _: () = msg_send![ns_window_ptr, setCollectionBehavior: behavior];
                 
-                // NSMainMenuWindowLevel = 24
-                let level: i32 = 24; 
+                // NSFloatingWindowLevel = 3
+                // This stays on top of normal windows and fullscreen apps (due to behavior) 
+                // but usually stays under the system menu bar icons.
+                let level: i32 = 3; 
                 let _: () = msg_send![ns_window_ptr, setLevel: level];
             }
         }
