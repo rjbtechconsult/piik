@@ -5,6 +5,10 @@ on:
     branches: ["master"]
     paths:
       - "website/**"
+      - "src/**"
+      - "src-tauri/**"
+      - "package.json"
+      - "tauri.conf.json"
       - ".github/workflows/deploy.yml"
 
   workflow_dispatch:
