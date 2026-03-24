@@ -800,6 +800,7 @@ function App() {
             teamMembers={teamMembers}
             isLoading={isLoading}
             parentItem={creatingSubItemFor || undefined}
+            defaultAssigneeUniqueName={currentUser?.uniqueName}
           />
         )}
 

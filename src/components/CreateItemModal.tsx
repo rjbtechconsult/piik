@@ -14,12 +14,13 @@ interface CreateItemModalProps {
   teamMembers: TeamMember[];
   isLoading: boolean;
   parentItem?: { id: number; title: string; areaPath: string; iterationPath: string };
+  defaultAssigneeUniqueName?: string;
 }
 
-export function CreateItemModal({ onClose, onSave, teamMembers, isLoading, parentItem }: CreateItemModalProps) {
+export function CreateItemModal({ onClose, onSave, teamMembers, isLoading, parentItem, defaultAssigneeUniqueName }: CreateItemModalProps) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState(parentItem ? "Task" : "User Story");
-  const [assignee, setAssignee] = useState("");
+  const [assignee, setAssignee] = useState(defaultAssigneeUniqueName || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
