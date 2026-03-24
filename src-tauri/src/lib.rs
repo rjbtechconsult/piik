@@ -658,11 +658,38 @@ pub fn run() {
             }
             
             #[cfg(target_os = "macos")]
-            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+            {
+                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                if let Some(window) = app.get_webview_window("main") {
+                    macos::set_window_overlay_behavior(&window);
+                }
+            }
 
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(target_os = "macos")]
+mod macos {
+    use tauri::{Runtime, WebviewWindow};
+    use objc::{msg_send, sel, sel_impl};
+
+    pub fn set_window_overlay_behavior<R: Runtime>(window: &WebviewWindow<R>) {
+        if let Ok(ns_window) = window.ns_window() {
+            let ns_window_ptr = ns_window as *mut objc::runtime::Object;
+            
+            unsafe {
+                // NSWindowCollectionBehaviorCanJoinAllSpaces (1 << 0) | NSWindowCollectionBehaviorFullScreenAuxiliary (1 << 7) = 129
+                let behavior: usize = 129;
+                let _: () = msg_send![ns_window_ptr, setCollectionBehavior: behavior];
+                
+                // NSMainMenuWindowLevel = 24
+                let level: i32 = 24; 
+                let _: () = msg_send![ns_window_ptr, setLevel: level];
+            }
+        }
+    }
 }
