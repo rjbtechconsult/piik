@@ -55,6 +55,7 @@ function App() {
   const [creatingSubItemFor, setCreatingSubItemFor] = useState<{ id: number; title: string; areaPath: string; iterationPath: string } | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [azureConfig, setAzureConfig] = useState<{ org: string; project: string }>({ org: "", project: "" });
  
   const lastWorkItemsRef = useRef<Record<number, string | null>>({});
   
@@ -110,7 +111,11 @@ function App() {
   const fetchCurrentUser = async () => {
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
+      const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
       const token = await getSetting("azure_pat") || await invoke("get_token", { key: "azure_pat" });
+      if (org && project) {
+        setAzureConfig({ org, project });
+      }
       if (org && token) {
         const iden: any = await invoke("identify_me", { organization: org, token });
         setCurrentUser(iden);
@@ -649,20 +654,21 @@ function App() {
           )}
 
           {!isLoading && !error && selectedTeam && (
-            <HierarchyExplorer
-              hierarchy={hierarchy}
-              isLoading={isLoading}
-              selectedStoryId={selectedStoryId}
-              onSelectStory={setSelectedStoryId}
-              activeOnly={activeOnly}
-              assigneeFilters={assigneeFilter}
-              searchQuery={searchQuery}
-              onUpdateStatus={handleUpdateStatus}
-              onCreateSubItem={(id, title, areaPath, iterationPath) => {
-                setCreatingSubItemFor({ id, title, areaPath, iterationPath });
-                setShowCreateModal(true);
-              }}
-            />
+          <HierarchyExplorer
+            hierarchy={hierarchy}
+            isLoading={isLoading}
+            selectedStoryId={selectedStoryId}
+            onSelectStory={setSelectedStoryId}
+            activeOnly={activeOnly}
+            assigneeFilters={assigneeFilter}
+            searchQuery={searchQuery}
+            baseUrl={azureConfig.org && azureConfig.project ? `https://dev.azure.com/${azureConfig.org}/${azureConfig.project}/_workitems/edit/` : ""}
+            onUpdateStatus={handleUpdateStatus}
+            onCreateSubItem={(id, title, areaPath, iterationPath) => {
+              setCreatingSubItemFor({ id, title, areaPath, iterationPath });
+              setShowCreateModal(true);
+            }}
+          />
           )}
         </div>
 

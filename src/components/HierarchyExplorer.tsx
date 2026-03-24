@@ -26,6 +26,7 @@ interface HierarchyExplorerProps {
   activeOnly: boolean;
   assigneeFilters: string[];
   searchQuery: string;
+  baseUrl: string;
   onUpdateStatus: (id: number, newStatus: string) => Promise<void>;
   onCreateSubItem: (id: number, title: string, areaPath: string, iterationPath: string) => void;
 }
@@ -38,6 +39,7 @@ interface NodeViewProps {
   activeOnly: boolean;
   onUpdateStatus: (id: number, newStatus: string) => Promise<void>;
   onCreateSubItem: (id: number, title: string, areaPath: string, iterationPath: string) => void;
+  baseUrl: string;
 }
 
 const STATUS_OPTIONS = [
@@ -62,9 +64,33 @@ const getAssigneeUniqueName = (assignedTo: any): string => {
   return assignedTo.uniqueName || assignedTo.displayName || "";
 };
 
-function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onUpdateStatus, onCreateSubItem }: NodeViewProps) {
+function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onUpdateStatus, onCreateSubItem, baseUrl }: NodeViewProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState(false);
+
+  const itemUrl = baseUrl ? `${baseUrl}${node.item.id}` : "";
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!itemUrl) return;
+    navigator.clipboard.writeText(itemUrl);
+    setCopyFeedback(true);
+    setTimeout(() => setCopyFeedback(false), 2000);
+  };
+
+  const handleOpen = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!itemUrl) return;
+    try {
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(itemUrl);
+    } catch (err) {
+      console.error("Failed to open URL:", err);
+      // Fallback
+      window.open(itemUrl, "_blank");
+    }
+  };
 
   const isSelected = selectedStoryId === node.item.id;
   const [isExpanded, setIsExpanded] = useState(level < 1 || isSelected);
@@ -114,7 +140,28 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
                       Story
                     </span>
                     <span className="text-[11px] font-bold text-[var(--text-dim)] tracking-tight flex items-center gap-1.5">
-                      #{node.item.id} <span className="text-[var(--text-dim)]/50">•</span> Hubtel
+                      #{node.item.id} 
+                      <span className="text-[var(--text-dim)]/50">•</span>
+                      <div className="flex items-center gap-1 ml-1">
+                        <button
+                          onClick={handleCopy}
+                          className={`p-1 rounded hover:bg-[var(--accent-blue)]/10 transition-colors cursor-pointer ${copyFeedback ? 'text-green-500' : 'text-[var(--text-dim)] hover:text-[var(--accent-blue)]'}`}
+                          title={copyFeedback ? "Copied!" : "Copy Link"}
+                        >
+                          {copyFeedback ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                          )}
+                        </button>
+                        <button
+                          onClick={handleOpen}
+                          className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/10 transition-colors cursor-pointer"
+                          title="Open in Browser"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                        </button>
+                      </div>
                     </span>
                   </div>
                   <h3 className="text-[13px] font-bold text-[var(--text-main)] leading-snug group-hover:text-[var(--accent-blue)] transition-colors break-words">
@@ -205,6 +252,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
                 activeOnly={activeOnly}
                 onUpdateStatus={onUpdateStatus}
                 onCreateSubItem={onCreateSubItem}
+                baseUrl={baseUrl}
               />
             ))}
           </div>
@@ -241,7 +289,29 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
             {node.item.fields["System.Title"]}
           </span>
           <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <span className="text-[9px] font-mono text-[var(--text-dim)]">#{node.item.id}</span>
+          <span className="text-[9px] font-mono text-[var(--text-dim)] flex items-center gap-1.5">
+            #{node.item.id}
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={handleCopy}
+                className={`p-0.5 rounded hover:bg-[var(--accent-blue)]/10 transition-all cursor-pointer ${copyFeedback ? 'text-green-500' : 'text-[var(--text-dim)] hover:text-[var(--accent-blue)]'}`}
+                title={copyFeedback ? "Copied!" : "Copy Link"}
+              >
+                {copyFeedback ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                )}
+              </button>
+              <button
+                onClick={handleOpen}
+                className="p-0.5 rounded text-[var(--text-dim)] hover:text-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/10 transition-all cursor-pointer"
+                title="Open in Browser"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+              </button>
+            </div>
+          </span>
 
             <div
               className="relative"
@@ -307,6 +377,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
               activeOnly={activeOnly}
               onUpdateStatus={onUpdateStatus}
               onCreateSubItem={onCreateSubItem}
+              baseUrl={baseUrl}
             />
           ))}
         </div>
@@ -372,6 +443,7 @@ export function HierarchyExplorer({
   activeOnly,
   assigneeFilters,
   searchQuery,
+  baseUrl,
   onUpdateStatus,
   onCreateSubItem
 }: HierarchyExplorerProps) {
@@ -427,6 +499,7 @@ export function HierarchyExplorer({
           activeOnly={activeOnly}
           onUpdateStatus={onUpdateStatus}
           onCreateSubItem={onCreateSubItem}
+          baseUrl={baseUrl}
         />
       ))}
     </div>
