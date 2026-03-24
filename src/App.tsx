@@ -455,6 +455,34 @@ function App() {
   };
 
   const handleUpdateStatus = async (id: number, newStatus: string) => {
+    // 1. Optimistic UI Update
+    const previousHierarchy = [...hierarchy];
+    const updateNodeStatus = (nodes: HierarchyNode[]): HierarchyNode[] => {
+      return nodes.map(node => {
+        if (node.item.id === id) {
+          return {
+            ...node,
+            item: {
+              ...node.item,
+              fields: {
+                ...node.item.fields,
+                "System.State": newStatus
+              }
+            }
+          };
+        }
+        if (node.children.length > 0) {
+          return {
+            ...node,
+            children: updateNodeStatus(node.children)
+          };
+        }
+        return node;
+      });
+    };
+
+    setHierarchy(prev => updateNodeStatus(prev));
+
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
@@ -471,9 +499,11 @@ function App() {
         status: newStatus
       });
 
-      fetchHierarchy();
+      // 2. Silent background refresh to sync other fields (ChangedDate, etc.)
+      fetchHierarchy(undefined, true);
     } catch (err) {
-      console.error("Failed to update status:", err);
+      console.error("Failed to update status, reverting optimistic change:", err);
+      setHierarchy(previousHierarchy);
       setError(err instanceof Error ? err.message : String(err));
     }
   };
