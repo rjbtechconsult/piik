@@ -120,9 +120,26 @@ function App() {
     }
   };
 
-  const refreshTrayBadge = (itemsOverride?: AzureWorkItem[]) => {
-    const itemsToCount = itemsOverride || hierarchy.map(n => n.item);
-    if (!currentUser || !itemsToCount) return;
+  const refreshTrayBadge = (itemsOverride?: any[]) => {
+    // If no items are provided, flatten the current hierarchy to get all items (including sub-tasks)
+    const flattenNodes = (nodes: HierarchyNode[]): AzureWorkItem[] => {
+      let result: AzureWorkItem[] = [];
+      nodes.forEach(node => {
+        result.push(node.item);
+        if (node.children && node.children.length > 0) {
+          result = result.concat(flattenNodes(node.children));
+        }
+      });
+      return result;
+    };
+
+    const itemsToCount = itemsOverride || flattenNodes(hierarchy);
+    
+    // If we don't have a current user, we can't count "my" tasks, so we clear the badge
+    if (!currentUser) {
+      invoke("update_tray_badge", { count: 0 }).catch(() => {});
+      return;
+    }
 
     const myTasks = itemsToCount.filter((item: any) => {
       if (!item || !item.fields) return false;
@@ -136,13 +153,20 @@ function App() {
         assignedTo.displayName === currentUser.displayName
       );
 
+      // Only count active Tasks and Bugs
       const isActiveState = ["new", "active", "open", "to do", "committed", "doing", "approved"].includes(state);
+      const isWorkItem = type === "Task" || type === "Bug";
       
-      return isMe && (type === "Task" || type === "Bug") && isActiveState;
+      return isMe && isWorkItem && isActiveState;
     });
     
-    invoke("update_tray_badge", { count: myTasks.length });
+    invoke("update_tray_badge", { count: myTasks.length }).catch(console.error);
   };
+
+  // Update tray badge whenever the current user or hierarchy changes
+  useEffect(() => {
+    refreshTrayBadge();
+  }, [currentUser, hierarchy]);
 
   useEffect(() => {
     if (selectedTeam) {
@@ -462,6 +486,7 @@ function App() {
     setSelectedStoryId(null);
     setAssigneeFilter([]);
     setCurrentUser(null);
+    invoke("update_tray_badge", { count: 0 }).catch(() => {});
     setError(null);
     setShowSettings(false); // Close settings to show landing screen
     console.log("App: State reset complete, showing landing screen");
