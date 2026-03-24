@@ -505,6 +505,30 @@ async fn update_azure_item_status(organization: String, project: String, token: 
 }
 
 #[tauri::command]
+async fn fetch_work_item_states(organization: String, project: String, token: String, work_item_type: String) -> Result<serde_json::Value, String> {
+    let org = organization.trim().trim_end_matches("/");
+    let proj = project.trim().trim_end_matches("/");
+    let type_encoded = work_item_type.trim().replace(" ", "%20");
+    let base_url = get_base_url(org);
+    let url = format!("{}/{}/_apis/wit/workitemtypes/{}/states?api-version=7.1", 
+        base_url, proj.replace(" ", "%20"), type_encoded);
+
+    let client = reqwest::Client::new();
+    let res = client.get(&url)
+        .basic_auth("", Some(token))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if res.status().is_success() {
+        let data: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
+        Ok(data)
+    } else {
+        Err(format!("Failed to fetch states for {}: {}", work_item_type, res.status()))
+    }
+}
+
+#[tauri::command]
 async fn identify_me(organization: String, token: String) -> Result<serde_json::Value, String> {
     let org = organization.trim().trim_end_matches("/");
     let base_url = get_base_url(org);
@@ -667,7 +691,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me])
+        .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me, fetch_work_item_states])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

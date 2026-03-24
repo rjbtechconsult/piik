@@ -79,7 +79,7 @@ function App() {
  
     const interval = setInterval(() => {
       fetchHierarchy(selectedIteration.id, true);
-    }, 120000); // 2 minutes
+    }, 300000); // 5 minutes
  
     return () => clearInterval(interval);
   }, [selectedTeam, selectedIteration]);
@@ -679,13 +679,32 @@ function App() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
               </div>
               <h3 className="text-sm font-bold text-[var(--text-main)] mb-2">Sync Error</h3>
-              <p className="text-xs text-[var(--text-muted)] mb-4">{error}</p>
-              <button onClick={() => {
-                setInitialSettingsTab("azure");
-                setShowSettings(true);
-              }} disabled={isLoading} className="p-1 px-3 bg-[var(--card-bg-subtle)] hover:bg-[var(--card-hover)] text-[var(--accent-blue)] text-[11px] rounded border border-[var(--border-main)] transition-all">
-                Edit Settings and Retry
-              </button>
+              <p className="text-[10px] text-[var(--text-muted)] mb-4 max-h-[100px] overflow-y-auto px-2 custom-scrollbar break-words">
+                {(() => {
+                  try {
+                    // Try to parse Azure DevOps complex error JSON
+                    const parsed = JSON.parse(error.includes("Failed to update status:") ? error.replace("Failed to update status: ", "") : error);
+                    return parsed.message || parsed.ErrorMessage || error;
+                  } catch {
+                    return error;
+                  }
+                })()}
+              </p>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setError(null)} 
+                  className="p-1 px-4 bg-[var(--card-bg-subtle)] hover:bg-[var(--card-hover)] text-[var(--text-dim)] text-[10px] font-bold rounded-lg border border-[var(--border-main)] transition-all"
+                >
+                  Dismiss
+                </button>
+                <button onClick={() => {
+                  setInitialSettingsTab("azure");
+                  setShowSettings(true);
+                  setError(null);
+                }} disabled={isLoading} className="p-1 px-4 bg-[var(--accent-blue)]/10 hover:bg-[var(--accent-blue)]/20 text-[var(--accent-blue)] text-[10px] font-bold rounded-lg border border-[var(--accent-blue)]/20 transition-all">
+                  Fix Settings
+                </button>
+              </div>
             </div>
           )}
 

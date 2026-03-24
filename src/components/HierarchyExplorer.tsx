@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { getSetting } from "../lib/db";
 
 interface AzureWorkItem {
   id: number;
@@ -48,6 +50,9 @@ const STATUS_OPTIONS = [
   "Approved", "Committed"                         // Scrum
 ];
 
+// Cache for work item type states to avoid redundant fetches
+const typeStatesCache: Record<string, string[]> = {};
+
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "";
   try {
@@ -68,6 +73,46 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
   const [isUpdating, setIsUpdating] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [allowedStates, setAllowedStates] = useState<string[]>(STATUS_OPTIONS);
+
+  useEffect(() => {
+    const fetchAllowedStates = async () => {
+      const type = node.item.fields["System.WorkItemType"];
+      if (!type) return;
+
+      if (typeStatesCache[type]) {
+        setAllowedStates(typeStatesCache[type]);
+        return;
+      }
+
+      try {
+        const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
+        const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
+        let token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => "");
+        if (!token) token = (await getSetting("azure_pat")) || "";
+
+        if (!org || !project || !token) return;
+
+        const data: any = await invoke("fetch_work_item_states", {
+          organization: org,
+          project,
+          token,
+          workItemType: type
+        });
+
+        if (data && data.value) {
+          const states = data.value.map((s: any) => s.name);
+          typeStatesCache[type] = states;
+          setAllowedStates(states);
+        }
+      } catch (err) {
+        console.error(`Failed to fetch states for ${type}:`, err);
+        // Fallback to default if fetch fails
+      }
+    };
+
+    fetchAllowedStates();
+  }, [node.item.fields["System.WorkItemType"]]);
 
   const itemUrl = baseUrl ? `${baseUrl}${node.item.id}` : "";
 
@@ -326,7 +371,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
               {showStatusMenu && (
                 <div className="absolute top-[calc(100%-4px)] left-0 pt-1 z-50">
                   <div className="bg-[var(--app-bg-solid)] border border-[var(--border-main)] rounded-lg shadow-2xl py-1 min-w-[100px] backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-200">
-                    {STATUS_OPTIONS.map(status => (
+                    {allowedStates.map(status => (
                       <button
                         key={status}
                         onClick={async (e) => {
