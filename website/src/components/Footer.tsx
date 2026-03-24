@@ -11,8 +11,15 @@ export const Footer: React.FC = () => {
         <div style={{ color: 'white', fontWeight: 600 }}>
           Piik <span style={{ color: 'var(--text-muted)' }}>— Native ADO Client</span>
         </div>
-        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          © {new Date().getFullYear()} Piik. Built by <a href="https://justicemarkwei.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-blue)', textDecoration: 'none' }}>Justice Markwei</a>.
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <img 
+            src="https://img.shields.io/github/downloads/rjbtechconsult/piik/total?style=flat-square&color=3b82f6&label=Downloads" 
+            alt="GitHub Downloads" 
+            style={{ height: '20px', borderRadius: '3px' }}
+          />
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            © {new Date().getFullYear()} Piik. Built by <a href="https://justicemarkwei.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-blue)', textDecoration: 'none' }}>Justice Markwei</a>.
+          </div>
         </div>
       </div>
     </footer>
