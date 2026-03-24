@@ -62,6 +62,11 @@ const formatErrorMessage = (error: string | null): string => {
     return "Authentication failed. Your PAT token might be invalid, expired, or lacking necessary scopes (Work Items: Read/Write).";
   }
 
+  // Handle Specific Azure DevOps error codes
+  if (clean.includes("VS1530019")) {
+    return "Your selected iteration could not be found. It may have been deleted or moved. Please go to Settings and re-select your current iteration.";
+  }
+
   // Try to parse any JSON blob in the error string
   try {
     const jsonMatch = clean.match(/\{.*\}/);
