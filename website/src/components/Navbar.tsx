@@ -1,5 +1,4 @@
 import React from 'react';
-import { Github } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const Navbar: React.FC = () => {
@@ -84,11 +83,6 @@ export const Navbar: React.FC = () => {
                 )}
               </a>
             </div>
-            
-            <a href="https://github.com/rjbtechconsult/piik" target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white', textDecoration: 'none', padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '999px' }}>
-              <Github size={16} />
-              <span className="hide-mobile">GitHub</span>
-            </a>
           </div>
         </div>
       </div>

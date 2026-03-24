@@ -63,7 +63,7 @@ export const InstallGuide: React.FC = () => {
     {
       icon: <Download className="text-gradient-accent" size={24} />,
       title: '1. Download & Install',
-      description: 'Download the latest Piik .dmg from GitHub Releases. Open it, and drag Piik into your Applications folder.'
+      description: 'Download the latest Piik .dmg from the link above. Open it, and drag Piik into your Applications folder.'
     },
     {
       icon: <Terminal className="text-gradient-accent" size={24} />,
