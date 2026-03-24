@@ -16,7 +16,7 @@ export const Navbar: React.FC = () => {
       { threshold: 0.2, rootMargin: '-20% 0px -20% 0px' }
     );
 
-    const sections = ['home', 'features', 'install'];
+    const sections = ['home', 'release-notes', 'features', 'install'];
     sections.forEach((id) => {
       const el = document.getElementById(id);
       if (el) {
@@ -70,6 +70,12 @@ export const Navbar: React.FC = () => {
 
           <div style={{ display: 'flex', gap: 'clamp(1rem, 3vw, 2rem)', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: 'clamp(0.75rem, 2vw, 1.5rem)', alignItems: 'center' }}>
+              <a href="#release-notes" style={navLinkStyle('release-notes')}>
+                What's New
+                {activeSection === 'release-notes' && (
+                  <motion.div layoutId="activeNav" style={{ position: 'absolute', bottom: '-4px', width: '4px', height: '4px', borderRadius: '50%', background: 'var(--primary-glow)' }} />
+                )}
+              </a>
               <a href="#features" style={navLinkStyle('features')}>
                 Features
                 {activeSection === 'features' && (
