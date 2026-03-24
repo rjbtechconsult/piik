@@ -519,7 +519,7 @@ export function HierarchyExplorer({
   if (visibleHierarchy.length === 0 && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[300px] text-[var(--text-dim)] gap-4 px-8 text-center bg-black/10 m-3 rounded-2xl border border-[var(--border-subtle)] border-dashed">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 animate-in fade-in zoom-in duration-1000"><path d="M18 10a6 6 0 0 0-12 0v8l3-2 3 2 3-2 3 2V10Z"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/></svg>
         <div className="flex flex-col gap-1">
           <p className="text-sm font-bold text-[var(--text-muted)]">
             {assigneeFilters.length > 0 ? "No matching work items found for these assignees" : "No active work items found"}
