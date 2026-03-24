@@ -58,6 +58,8 @@ function App() {
   const [azureConfig, setAzureConfig] = useState<{ org: string; project: string }>({ org: "", project: "" });
  
   const lastWorkItemsRef = useRef<Record<number, string | null>>({});
+  const appStartTimeRef = useRef<Date>(new Date());
+  const isInitialLoadRef = useRef<boolean>(true);
   
   const isConnected = teams.length > 0;
  
@@ -312,7 +314,8 @@ function App() {
         refreshTrayBadge(hData.workItems);
 
         const newItems = hData.workItems as any[];
-        const hasPreviousState = Object.keys(lastWorkItemsRef.current).length > 0;
+        const hasPreviousState = !isInitialLoadRef.current && Object.keys(lastWorkItemsRef.current).length > 0;
+        const pendingNotifications: { title: string; body: string }[] = [];
 
         newItems.forEach(item => {
           if (!item || !item.fields) return;
@@ -323,8 +326,17 @@ function App() {
           const prevAssignee = lastWorkItemsRef.current[id];
           
           if (hasPreviousState && currentAssignee && currentAssignee !== prevAssignee) {
-            if (notificationsEnabled) {
-              sendNotification({
+            const createdDateStr = item.fields["System.CreatedDate"];
+            const createdDate = createdDateStr ? new Date(createdDateStr) : null;
+            
+            // Only notify if:
+            // 1. It's truly an assignment change to the user (or someone else)
+            // 2. It's not a "new" item that was actually created before the app started
+            const isExistingItem = prevAssignee !== undefined;
+            const isNewButOld = !isExistingItem && createdDate && createdDate < appStartTimeRef.current;
+
+            if (!isNewButOld && notificationsEnabled) {
+              pendingNotifications.push({
                 title: "Task Assigned",
                 body: `"${item.fields["System.Title"] || 'Work Item'}" is now assigned to ${currentAssignee}`,
               });
@@ -333,12 +345,27 @@ function App() {
           lastWorkItemsRef.current[id] = currentAssignee;
         });
 
-        if (!hasPreviousState) {
-          newItems.forEach(item => {
-            const id = item.fields["System.Id"];
-            lastWorkItemsRef.current[id] = item.fields["System.AssignedTo"]?.displayName || item.fields["System.AssignedTo"]?.uniqueName || null;
-          });
+        // Batch and replace notifications
+        if (pendingNotifications.length > 0) {
+          if (pendingNotifications.length > 3) {
+            sendNotification({
+              title: "Work Item Updates",
+              body: `${pendingNotifications.length} items were updated or assigned.`,
+              // @ts-ignore - Some versions of the plugin support id/tag for replacement
+              id: "piik-update-batch" 
+            });
+          } else {
+            pendingNotifications.forEach((notification, idx) => {
+              sendNotification({
+                ...notification,
+                // @ts-ignore
+                id: `piik-update-${idx}`
+              });
+            });
+          }
         }
+
+        isInitialLoadRef.current = false;
       }
     } catch (err: any) {
       console.error("Failed to fetch hierarchy:", err);
