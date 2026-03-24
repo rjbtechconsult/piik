@@ -33,6 +33,49 @@ interface AzureTeam {
   name: string;
 }
 
+const formatErrorMessage = (error: string | null): string => {
+  if (!error) return "";
+  
+  // Strip common prefixes
+  let clean = error.replace(/^(Failed to fetch teams: |Failed to update status: |Failed to fetch iterations: |Failed to fetch hierarchy: )/i, "");
+  
+  // Handle HTTP 404 (Resource not found)
+  if (clean.includes("404 Not Found")) {
+    if (clean.includes("Team") || clean.includes("Project") || clean.includes("TeamFoundation")) {
+      return "The Team or Project name in your settings might be incorrect. Please check for typos or ensure the project exists.";
+    }
+    
+    const jsonPart = clean.split("404 Not Found - ")[1];
+    if (jsonPart) {
+      try {
+        const parsed = JSON.parse(jsonPart);
+        return parsed.message || "The requested resource was not found. Please check your settings.";
+      } catch {
+        return "Could not find your project or organization. Please check your Azure DevOps settings.";
+      }
+    }
+    return "Could not find your project or organization. Please check your Azure DevOps settings.";
+  }
+
+  // Handle HTTP 401/403 (Auth issues)
+  if (clean.includes("401 Unauthorized") || clean.includes("403 Forbidden") || clean.includes("authentication failed") || clean.includes("login failed")) {
+    return "Authentication failed. Your PAT token might be invalid, expired, or lacking necessary scopes (Work Items: Read/Write).";
+  }
+
+  // Try to parse any JSON blob in the error string
+  try {
+    const jsonMatch = clean.match(/\{.*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return parsed.message || parsed.ErrorMessage || clean;
+    }
+  } catch {
+    // Ignore parse errors, fallback to clean string
+  }
+
+  return clean;
+};
+
 function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [initialSettingsTab, setInitialSettingsTab] = useState<"azure" | "general">("general");
@@ -678,17 +721,11 @@ function App() {
               <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
               </div>
-              <h3 className="text-sm font-bold text-[var(--text-main)] mb-2">Sync Error</h3>
-              <p className="text-[10px] text-[var(--text-muted)] mb-4 max-h-[100px] overflow-y-auto px-2 custom-scrollbar break-words">
-                {(() => {
-                  try {
-                    // Try to parse Azure DevOps complex error JSON
-                    const parsed = JSON.parse(error.includes("Failed to update status:") ? error.replace("Failed to update status: ", "") : error);
-                    return parsed.message || parsed.ErrorMessage || error;
-                  } catch {
-                    return error;
-                  }
-                })()}
+              <h3 className="text-sm font-bold text-[var(--text-main)] mb-2">
+                {error.includes("404") || error.includes("401") || error.includes("Unauthorized") ? "Setup Required" : "Sync Error"}
+              </h3>
+              <p className="text-[10px] text-[var(--text-muted)] mb-5 max-h-[120px] overflow-y-auto px-4 leading-relaxed font-medium">
+                {formatErrorMessage(error)}
               </p>
               <div className="flex items-center gap-2">
                 <button 
