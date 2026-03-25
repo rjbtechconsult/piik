@@ -932,6 +932,9 @@ pub fn run() {
 
             Ok(())
         })
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, update_azure_item_title, update_azure_item_parent, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me, fetch_work_item_states, fetch_azure_epics, debug_azure_types])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,0 +1,15 @@
+{
+  "version": "v0.2.4",
+  "notes": "Enable in-app updates and UI refinements.",
+  "pub_date": "2026-03-25T17:11:46.756Z",
+  "platforms": {
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSmRPL1JHMHVHeEFoWEFoM0RTckh5NUJMYjhLSnMzaENYTEszUWxVeDJqZ0xXNDJNL2lJd01WM0Q0VDYyQUJWV1oxb1FRMFFobEJFNHJtTytVTTNrbkVFekxUQkpzeXd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0NDU4NjYyCWZpbGU6UGlpa18wLjIuNF9hYXJjaDY0LmRtZwpMYXJ3aCtiWGFZZGgyUGpPVTB0TjZibmUyTk1yWVpBajlLeTFYQTRyRUdOUkFYMlAxSUFhdUVoSUU0ZWRqVGpIWnZYODlYWGF6ZEdHM2tWL0h1Uk9EUT09Cg==",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.4/Piik.dmg"
+    },
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSmRPL1JHMHVHeEFoWEFoM0RTckh5NUJMYjhLSnMzaENYTEszUWxVeDJqZ0xXNDJNL2lJd01WM0Q0VDYyQUJWV1oxb1FRMFFobEJFNHJtTytVTTNrbkVFekxUQkpzeXd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0NDU4NjYyCWZpbGU6UGlpa18wLjIuNF9hYXJjaDY0LmRtZwpMYXJ3aCtiWGFZZGgyUGpPVTB0TjZibmUyTk1yWVpBajlLeTFYQTRyRUdOUkFYMlAxSUFhdUVoSUU0ZWRqVGpIWnZYODlYWGF6ZEdHM2tWL0h1Uk9EUT09Cg==",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.4/Piik.dmg"
+    }
+  }
+}

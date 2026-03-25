@@ -11,6 +11,12 @@
     "sql:allow-select",
     "positioner:default",
     "autostart:default",
-    "notification:default"
+    "notification:default",
+    "updater:default",
+    "updater:allow-check",
+    "updater:allow-download",
+    "updater:allow-install",
+    "process:allow-restart",
+    "shell:default"
   ]
 }

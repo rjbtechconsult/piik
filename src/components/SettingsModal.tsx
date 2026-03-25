@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { saveSetting, getSetting } from "../lib/db";
 import Switch from "./Switch";
+import { check } from "@tauri-apps/plugin-updater";
+import { getVersion } from "@tauri-apps/api/app";
+import { relaunch } from "@tauri-apps/plugin-process";
 
 interface AzureConfig {
   organization: string;
@@ -16,7 +19,7 @@ interface SettingsModalProps {
   initialTab?: SettingsView;
 }
 
-type SettingsView = "azure" | "general";
+type SettingsView = "azure" | "general" | "updates";
 
 export function SettingsModal({ onClose, onSave, onDisconnect, isConnected, initialTab = "general" }: SettingsModalProps) {
   const [activeView, setActiveView] = useState<SettingsView>(initialTab);
@@ -26,6 +29,10 @@ export function SettingsModal({ onClose, onSave, onDisconnect, isConnected, init
   const [token, setToken] = useState("");
   const [theme, setTheme] = useState("dark");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [currentVersion, setCurrentVersion] = useState("");
+  const [updateStatus, setUpdateStatus] = useState<"idle" | "checking" | "downloading" | "ready" | "error" | "uptodate">("idle");
+  const [updateError, setUpdateError] = useState("");
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -56,6 +63,7 @@ export function SettingsModal({ onClose, onSave, onDisconnect, isConnected, init
       }
     };
     loadSettings();
+    getVersion().then(setCurrentVersion);
   }, []);
 
   const handleDisconnect = async () => {
@@ -146,6 +154,57 @@ export function SettingsModal({ onClose, onSave, onDisconnect, isConnected, init
     }
   };
 
+  const handleCheckUpdate = async () => {
+    setUpdateStatus("checking");
+    setUpdateError("");
+    try {
+      const update = await check();
+      if (update) {
+        setUpdateStatus("ready");
+      } else {
+        setUpdateStatus("uptodate");
+      }
+    } catch (e) {
+      console.error("Update error:", e);
+      setUpdateStatus("error");
+      setUpdateError(String(e));
+    }
+  };
+
+  const handleInstallUpdate = async () => {
+    try {
+      setUpdateStatus("downloading");
+      const update = await check();
+      if (update) {
+        let downloaded = 0;
+        let contentLength = 0;
+        await update.downloadAndInstall((event) => {
+          switch (event.event) {
+            case 'Started':
+              contentLength = event.data.contentLength || 0;
+              console.log(`started downloading ${contentLength} bytes`);
+              break;
+            case 'Progress':
+              downloaded += event.data.chunkLength;
+              if (contentLength > 0) {
+                setDownloadProgress(Math.round((downloaded / contentLength) * 100));
+              }
+              console.log(`downloaded ${downloaded} from ${contentLength}`);
+              break;
+            case 'Finished':
+              console.log('download finished');
+              break;
+          }
+        });
+        await relaunch();
+      }
+    } catch (e) {
+      console.error("Install error:", e);
+      setUpdateStatus("error");
+      setUpdateError(String(e));
+    }
+  };
+
   const [showPATGuide, setShowPATGuide] = useState(false);
 
   return (
@@ -175,11 +234,17 @@ export function SettingsModal({ onClose, onSave, onDisconnect, isConnected, init
           >
             Azure DevOps
           </button>
+          <button
+            onClick={() => setActiveView("updates")}
+            className={`pb-3 px-2 text-[10px] font-bold uppercase tracking-wider transition-all border-b-2 ${activeView === "updates" ? "border-[var(--accent-blue)] text-[var(--text-main)]" : "border-transparent text-[var(--text-dim)] hover:text-[var(--text-muted)]"}`}
+          >
+            Updates
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <form onSubmit={handleSubmit} className="p-6 space-y-6 min-h-[300px]">
-            {activeView === "azure" ? (
+            {activeView === "azure" && (
               <div className="space-y-5 animate-in fade-in slide-in-from-left-2 duration-300">
 
 
@@ -259,57 +324,61 @@ export function SettingsModal({ onClose, onSave, onDisconnect, isConnected, init
                     </div>
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
-                <div className="space-y-3">
-                  <label className="text-[10px] uppercase font-bold text-[var(--text-dim)] ml-1 tracking-wider">Theme Mode</label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {[
-                      { id: "dark", name: "Dark", icon: "🌙" },
-                      { id: "light", name: "Light", icon: "☀️" },
-                      { id: "system", name: "System", icon: "🌓" }
-                    ].map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => setTheme(t.id)}
-                        className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${theme === t.id ? "bg-[var(--accent-blue)]/10 border-[var(--accent-blue)] text-[var(--text-main)]" : "bg-[var(--card-bg)] border-[var(--border-main)] text-[var(--text-muted)] hover:border-[var(--text-dim)]"}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-base">{t.icon}</span>
-                          <span className="text-xs font-semibold">{t.name}</span>
-                        </div>
-                        {theme === t.id && (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent-blue)]"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
                 </div>
+              )}
 
-                <div className="pt-4 border-t border-[var(--border-subtle)]">
-                  <div className="flex items-center justify-between px-1">
-                    <div className="space-y-0.5">
-                      <label className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider">Enable Notifications</label>
-                      <p className="text-[9px] text-[var(--text-dim)] leading-tight">Get alerted for new task assignments</p>
+              {activeView === "general" && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
+                  <div className="space-y-3">
+                    <label className="text-[10px] uppercase font-bold text-[var(--text-dim)] ml-1 tracking-wider">Theme Mode</label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { id: "dark", name: "Dark", icon: "🌙" },
+                        { id: "light", name: "Light", icon: "☀️" },
+                        { id: "system", name: "System", icon: "🌓" }
+                      ].map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setTheme(t.id)}
+                          className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${theme === t.id ? "bg-[var(--accent-blue)]/10 border-[var(--accent-blue)] text-[var(--text-main)]" : "bg-[var(--card-bg)] border-[var(--border-main)] text-[var(--text-muted)] hover:border-[var(--text-dim)]"}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-base">{t.icon}</span>
+                            <span className="text-xs font-semibold">{t.name}</span>
+                          </div>
+                          {theme === t.id && (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent-blue)]"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          )}
+                        </button>
+                      ))}
                     </div>
-                    <Switch
-                      checked={notificationsEnabled}
-                      onChange={setNotificationsEnabled}
-                    />
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--border-subtle)]">
+                    <div className="flex items-center justify-between px-1">
+                      <div className="space-y-0.5">
+                        <label className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider">Enable Notifications</label>
+                        <p className="text-[9px] text-[var(--text-dim)] leading-tight">Get alerted for new task assignments</p>
+                      </div>
+                      <Switch
+                        checked={notificationsEnabled}
+                        onChange={setNotificationsEnabled}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <div className="pt-2 flex flex-col gap-3">
-              <button
-                type="submit"
-                className="w-full bg-[var(--accent-blue)] hover:bg-[var(--accent-blue-hover)] text-white text-xs font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98]"
-              >
-                {activeView === "azure" ? "Save Configuration" : "Apply Settings"}
-              </button>
+              {activeView !== "updates" && (
+                <button
+                  type="submit"
+                  className="w-full bg-[var(--accent-blue)] hover:bg-[var(--accent-blue-hover)] text-white text-xs font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98]"
+                >
+                  {activeView === "azure" ? "Save Configuration" : "Apply Settings"}
+                </button>
+              )}
               
               {activeView === "azure" && isConnected && (
                 <button
@@ -322,6 +391,92 @@ export function SettingsModal({ onClose, onSave, onDisconnect, isConnected, init
                 >
                   Disconnect Azure DevOps
                 </button>
+              )}
+
+              {activeView === "updates" && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex flex-col items-center justify-center p-8 bg-[var(--card-bg)] rounded-2xl border border-[var(--border-main)] text-center space-y-4">
+                    <div className="w-12 h-12 bg-[var(--accent-blue)]/10 rounded-full flex items-center justify-center text-[var(--accent-blue)]">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-[var(--text-main)]">Piik version {currentVersion}</h3>
+                      <p className="text-[10px] text-[var(--text-dim)] mt-1">Check if there's a newer version available.</p>
+                    </div>
+
+                    {updateStatus === "idle" && (
+                      <button
+                        type="button"
+                        onClick={handleCheckUpdate}
+                        className="bg-[var(--accent-blue)] hover:bg-[var(--accent-blue-hover)] text-white px-6 py-2 rounded-xl text-[10px] font-bold transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98]"
+                      >
+                        Check for Updates
+                      </button>
+                    )}
+
+                    {updateStatus === "checking" && (
+                      <div className="flex items-center gap-2 text-[var(--accent-blue)]">
+                        <div className="w-3 h-3 border-2 border-[var(--accent-blue)] border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Searching...</span>
+                      </div>
+                    )}
+
+                    {updateStatus === "uptodate" && (
+                      <div className="space-y-3">
+                        <div className="px-4 py-2 bg-green-500/10 text-green-500 text-[10px] font-bold rounded-lg border border-green-500/20">
+                          You are on the latest version!
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setUpdateStatus("idle")}
+                          className="text-[10px] text-[var(--text-dim)] hover:text-[var(--text-main)] transition-colors underline underline-offset-4"
+                        >
+                          Check again
+                        </button>
+                      </div>
+                    )}
+
+                    {updateStatus === "ready" && (
+                      <button
+                        type="button"
+                        onClick={handleInstallUpdate}
+                        className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl text-[10px] font-bold transition-all shadow-xl shadow-green-500/20 active:scale-[0.98]"
+                      >
+                        Install Update & Restart
+                      </button>
+                    )}
+
+                    {updateStatus === "downloading" && (
+                      <div className="w-full space-y-2">
+                        <div className="flex justify-between text-[9px] font-bold text-[var(--text-dim)] uppercase tracking-widest px-1">
+                          <span>Downloading...</span>
+                          <span>{downloadProgress}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                          <div
+                            className="h-full bg-[var(--accent-blue)] transition-all duration-300"
+                            style={{ width: `${downloadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {updateStatus === "error" && (
+                      <div className="space-y-3">
+                        <div className="px-4 py-2 bg-red-500/10 text-red-500 text-[10px] font-bold rounded-lg border border-red-500/20 max-w-[200px] break-words">
+                          {updateError || "Failed to check for updates."}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleCheckUpdate}
+                          className="text-[10px] text-[var(--accent-blue)] hover:underline font-bold"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </form>
