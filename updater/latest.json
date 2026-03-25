@@ -1,15 +1,15 @@
 {
-  "version": "v0.2.4",
-  "notes": "Enable in-app updates and UI refinements.",
-  "pub_date": "2026-03-25T17:11:46.756Z",
+  "version": "v0.2.5",
+  "notes": "Native In-App Updates and UI stability improvements.",
+  "pub_date": "2026-03-25T17:22:53.228Z",
   "platforms": {
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSmRPL1JHMHVHeEFoWEFoM0RTckh5NUJMYjhLSnMzaENYTEszUWxVeDJqZ0xXNDJNL2lJd01WM0Q0VDYyQUJWV1oxb1FRMFFobEJFNHJtTytVTTNrbkVFekxUQkpzeXd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0NDU4NjYyCWZpbGU6UGlpa18wLjIuNF9hYXJjaDY0LmRtZwpMYXJ3aCtiWGFZZGgyUGpPVTB0TjZibmUyTk1yWVpBajlLeTFYQTRyRUdOUkFYMlAxSUFhdUVoSUU0ZWRqVGpIWnZYODlYWGF6ZEdHM2tWL0h1Uk9EUT09Cg==",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.4/Piik.dmg"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSmRPL1JHMHVHeE5BWSt0TVUwOXpaT0hWUm1MSW1iUnlQVEh6cHhRYWZLSVAzTExiOXYvNmgvUElhdVRFa2tuZVMycDNSQzMreEFYUzFsQkxvcW5oaUF4OEJrT1k2ZFEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0NDU5MzEzCWZpbGU6UGlpa18wLjIuNV9hYXJjaDY0LmRtZwpGSjlQZlQxOUN4dkJwNDZnd1ZoQmw2Y2x1Sld4VGc3bzBSZWkyZjRYOXM0M3hUTEgvZGhsbjE2NWptRVN0bzhMVDNIak1YWUEvTG9Jd21veDgxdlBEdz09Cg==",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.5/Piik.dmg"
     },
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSmRPL1JHMHVHeEFoWEFoM0RTckh5NUJMYjhLSnMzaENYTEszUWxVeDJqZ0xXNDJNL2lJd01WM0Q0VDYyQUJWV1oxb1FRMFFobEJFNHJtTytVTTNrbkVFekxUQkpzeXd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0NDU4NjYyCWZpbGU6UGlpa18wLjIuNF9hYXJjaDY0LmRtZwpMYXJ3aCtiWGFZZGgyUGpPVTB0TjZibmUyTk1yWVpBajlLeTFYQTRyRUdOUkFYMlAxSUFhdUVoSUU0ZWRqVGpIWnZYODlYWGF6ZEdHM2tWL0h1Uk9EUT09Cg==",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.4/Piik.dmg"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSmRPL1JHMHVHeE5BWSt0TVUwOXpaT0hWUm1MSW1iUnlQVEh6cHhRYWZLSVAzTExiOXYvNmgvUElhdVRFa2tuZVMycDNSQzMreEFYUzFsQkxvcW5oaUF4OEJrT1k2ZFEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0NDU5MzEzCWZpbGU6UGlpa18wLjIuNV9hYXJjaDY0LmRtZwpGSjlQZlQxOUN4dkJwNDZnd1ZoQmw2Y2x1Sld4VGc3bzBSZWkyZjRYOXM0M3hUTEgvZGhsbjE2NWptRVN0bzhMVDNIak1YWUEvTG9Jd21veDgxdlBEdz09Cg==",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.5/Piik.dmg"
     }
   }
 }
