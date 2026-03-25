@@ -452,7 +452,6 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
 
             {getAssigneeName() && (
               <span className="text-[9px] text-[var(--text-dim)] flex items-center gap-1.5">
-                <span className="opacity-50">•</span>
                 <div className="flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-60"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                   <span>{getAssigneeName()}</span>
