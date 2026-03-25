@@ -32,21 +32,21 @@ export function IterationSelector({ iterations, selectedIteration, onSelect, isL
   if (iterations.length === 0 && !isLoading) return null;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative w-full" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
-        className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[var(--card-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all text-[11px] font-medium border border-[var(--border-subtle)]"
+        className="w-full flex items-center justify-between gap-2 px-2 py-1 rounded-md hover:bg-[var(--card-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all text-[11px] font-medium border border-[var(--border-subtle)]"
       >
-        <span className="truncate max-w-[120px]">
-          {isLoading ? "Loading Sprints..." : (selectedIteration?.name || "Select Sprint")}
+        <span className="truncate text-left flex-1" title={selectedIteration?.name || "Select Iteration"}>
+          {isLoading ? "Loading..." : (selectedIteration?.name || "Select Iteration")}
         </span>
         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
       </button>
 
       {isOpen && (
         <div className="absolute top-full right-0 mt-1 w-56 bg-[var(--app-bg-solid)] border border-[var(--border-main)] rounded-lg shadow-2xl z-50 py-1.5 animate-in fade-in zoom-in duration-200">
-          <div className="px-3 py-1 text-[9px] font-bold text-[var(--text-dim)] uppercase tracking-widest">Team Sprints</div>
+          <div className="px-3 py-1 text-[9px] font-bold text-[var(--text-dim)] uppercase tracking-widest">Team Iterations</div>
           <div className="max-h-48 overflow-y-auto custom-scrollbar">
             {iterations.map((it) => (
               <button

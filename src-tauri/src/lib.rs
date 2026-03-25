@@ -243,7 +243,7 @@ async fn fetch_azure_hierarchy(organization: String, project: String, team: Stri
         let details_url = format!("{}/{}/_apis/wit/workitemsbatch?api-version=7.1", base_url, proj_encoded);
         let details_query = serde_json::json!({
             "ids": chunk,
-            "fields": ["System.Id", "System.Title", "System.State", "System.WorkItemType", "System.AssignedTo", "System.CreatedDate", "System.AreaPath", "System.IterationPath"]
+            "fields": ["System.Id", "System.Title", "System.State", "System.WorkItemType", "System.AssignedTo", "System.CreatedDate", "System.AreaPath", "System.IterationPath", "System.Parent"]
         });
 
         println!("Backend: Fetching batch chunk {} ({} items)...", i + 1, chunk.len());
@@ -266,7 +266,48 @@ async fn fetch_azure_hierarchy(organization: String, project: String, team: Stri
         }
     }
 
-    println!("Backend: Total work items enriched: {}", all_work_items.len());
+    // 4. Enrich Missing Parents (Up to 2 levels to catch Epics for stories whose Features aren't in sprint)
+    let mut fetched_ids: std::collections::HashSet<i64> = all_work_items.iter().filter_map(|wi| wi["id"].as_i64()).collect();
+    
+    for pass in 0..2 {
+        let missing_parent_ids: Vec<i64> = all_work_items.iter()
+            .filter_map(|wi| wi["fields"]["System.Parent"].as_i64())
+            .filter(|pid| !fetched_ids.contains(pid))
+            .collect::<std::collections::HashSet<_>>().into_iter().collect();
+
+        if missing_parent_ids.is_empty() { break; }
+        
+        println!("Backend: Enrichment pass {}: Fetching {} off-sprint parents", pass + 1, missing_parent_ids.len());
+        
+        for chunk in missing_parent_ids.chunks(200) {
+            let details_url = format!("{}/{}/_apis/wit/workitemsbatch?api-version=7.1", base_url, proj_encoded);
+            let details_query = serde_json::json!({
+                "ids": chunk,
+                "fields": ["System.Id", "System.Title", "System.WorkItemType", "System.Parent"]
+            });
+
+            let res = client.post(&details_url)
+                .basic_auth("", Some(token.clone()))
+                .json(&details_query)
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if res.status().is_success() {
+                let data: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
+                if let Some(items) = data["value"].as_array() {
+                    for item in items {
+                        if let Some(id) = item["id"].as_i64() {
+                            fetched_ids.insert(id);
+                            all_work_items.push(item.clone());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    println!("Backend: Total work items enriched (including off-sprint parents): {}", all_work_items.len());
 
     Ok(serde_json::json!({
         "relations": items_data["workItemRelations"],
@@ -469,6 +510,49 @@ async fn create_azure_work_item(
 }
 
 #[tauri::command]
+async fn update_azure_item_parent(organization: String, project: String, token: String, id: i64, parent_id: i64) -> Result<(), String> {
+    let org = organization.trim().trim_end_matches("/");
+    let proj = project.trim().trim_end_matches("/");
+    let base_url = get_base_url(org);
+    let url = format!("{}/{}/_apis/wit/workitems/{}?api-version=7.1", base_url, proj.replace(" ", "%20"), id);
+
+    let client = reqwest::Client::new();
+    let parent_url = format!("{}/{}/_apis/wit/workitems/{}?api-version=7.1", 
+        base_url, proj.replace(" ", "%20"), parent_id);
+        
+    let patch = serde_json::json!([
+        {
+            "op": "add",
+            "path": "/fields/System.Parent",
+            "value": parent_id
+        },
+        {
+            "op": "add",
+            "path": "/relations/-",
+            "value": {
+                "rel": "System.LinkTypes.Hierarchy-Reverse",
+                "url": parent_url
+            }
+        }
+    ]);
+
+    let res = client.patch(&url)
+        .basic_auth("", Some(token))
+        .header("Content-Type", "application/json-patch+json")
+        .json(&patch)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if res.status().is_success() {
+        Ok(())
+    } else {
+        let err_body = res.text().await.unwrap_or_default();
+        Err(format!("Failed to update parent: {}", err_body))
+    }
+}
+
+#[tauri::command]
 async fn update_azure_item_status(organization: String, project: String, token: String, id: i64, status: String) -> Result<(), String> {
     let org = organization.trim().trim_end_matches("/");
     let proj = project.trim().trim_end_matches("/");
@@ -599,6 +683,117 @@ async fn identify_me(organization: String, token: String) -> Result<serde_json::
 }
 
 #[tauri::command]
+async fn fetch_azure_epics(organization: String, project: String, token: String, area_path: Option<String>, recursive: Option<bool>) -> Result<serde_json::Value, String> {
+    let org = organization.trim().trim_end_matches("/");
+    let proj = project.trim().trim_end_matches("/");
+    let base_url = get_base_url(org);
+    let url = format!("{}/{}/_apis/wit/wiql?api-version=7.1", base_url, proj.replace(" ", "%20"));
+
+    let client = reqwest::Client::new();
+    println!("Backend diagnostic: Fetching epics for project '{}' at url '{}' (Area: {:?}, Recursive: {:?})", proj, url, area_path, recursive);
+    
+    // Build query with optional area path filtering - strictly scoped to current project and active/new states
+    let mut query_str = format!("SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{}' AND ([System.WorkItemType] = 'Epic' OR [System.WorkItemType] = 'Feature') AND [System.State] IN ('New', 'Active', 'In Progress', 'In-Progress', 'To Do', 'Doing', 'InProgress', 'Approved', 'Committed')", proj.replace("'", "''"));
+    
+    if let Some(path) = area_path {
+        if !path.is_empty() {
+            let op = if recursive.unwrap_or(true) { "UNDER" } else { "=" };
+            query_str.push_str(&format!(" AND [System.AreaPath] {} '{}'", op, path.replace("'", "''")));
+        }
+    }
+
+    let query = serde_json::json!({
+        "query": query_str
+    });
+
+    let res = client.post(&url)
+        .basic_auth("", Some(token.clone()))
+        .json(&query)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let status = res.status();
+    let text = res.text().await.map_err(|e| e.to_string())?;
+
+    if status.is_success() {
+        let data: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+        
+        if let Some(items) = data["workItems"].as_array() {
+            println!("Backend: Found {} epic/feature IDs in project '{}'", items.len(), proj);
+            if items.is_empty() {
+                return Ok(serde_json::json!([]));
+            }
+            
+            let ids: Vec<i64> = items.iter().filter_map(|i| i["id"].as_i64()).collect();
+            
+            // Chunk IDs into groups of 200 (ADO API limit)
+            let mut all_results = Vec::new();
+            let details_url = format!("{}/{}/_apis/wit/workitemsbatch?api-version=7.1", base_url, proj.replace(" ", "%20"));
+            
+            for chunk in ids.chunks(200) {
+                let details_query = serde_json::json!({
+                    "ids": chunk,
+                    "fields": ["System.Id", "System.Title", "System.WorkItemType", "System.State"]
+                });
+                
+                let details_res = client.post(&details_url)
+                    .basic_auth("", Some(token.clone()))
+                    .json(&details_query)
+                    .send()
+                    .await
+                    .map_err(|e| e.to_string())?;
+                    
+                if details_res.status().is_success() {
+                    let details_data: serde_json::Value = details_res.json().await.map_err(|e| e.to_string())?;
+                    if let Some(values) = details_data["value"].as_array() {
+                        all_results.extend(values.clone());
+                    }
+                } else {
+                    let details_text = details_res.text().await.unwrap_or_default();
+                    println!("Backend: Epic details chunk request failed: {}", details_text);
+                    // Continue with other chunks if one fails? Or return error? 
+                    // Let's finish what we have.
+                }
+            }
+            
+            println!("Backend: Returning {} epics with details", all_results.len());
+            return Ok(serde_json::json!(all_results));
+        }
+        Ok(serde_json::json!([]))
+    } else {
+        println!("Backend: Epic WIQL request failed ({}): {}", status, text);
+        Err(format!("Failed to fetch epics: {} - {}", status, text))
+    }
+}
+
+#[tauri::command]
+async fn debug_azure_types(organization: String, project: String, token: String) -> Result<serde_json::Value, String> {
+    let org = organization.trim().trim_end_matches("/");
+    let proj = project.trim().trim_end_matches("/");
+    let base_url = get_base_url(org);
+    let url = format!("{}/{}/_apis/wit/workitemtypes?api-version=7.1", base_url, proj.replace(" ", "%20"));
+
+    let client = reqwest::Client::new();
+    let res = client.get(&url)
+        .basic_auth("", Some(token))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = res.text().await.map_err(|e| e.to_string())?;
+    let data: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+    
+    // Extract names for easy viewing
+    if let Some(types) = data["value"].as_array() {
+        let names: Vec<String> = types.iter().filter_map(|t| t["name"].as_str().map(|s| s.to_string())).collect();
+        println!("Backend Available Types: {:?}", names);
+    }
+    
+    Ok(data)
+}
+
+#[tauri::command]
 fn update_tray_badge(app_handle: tauri::AppHandle, count: i32) {
     println!("Backend: Updating tray badge to: {}", count);
     if let Some(tray) = app_handle.tray_by_id("tray") {
@@ -691,7 +886,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me, fetch_work_item_states])
+        .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, update_azure_item_parent, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me, fetch_work_item_states, fetch_azure_epics, debug_azure_types])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

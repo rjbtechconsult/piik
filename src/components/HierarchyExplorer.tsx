@@ -12,6 +12,7 @@ interface AzureWorkItem {
     "System.CreatedDate"?: string;
     "System.AreaPath": string;
     "System.IterationPath": string;
+    "System.Parent"?: number;
   };
 }
 
@@ -25,12 +26,15 @@ interface HierarchyExplorerProps {
   isLoading: boolean;
   selectedStoryId: number | null;
   onSelectStory: (id: number | null) => void;
-  activeOnly: boolean;
+  statusFilters: string[];
   assigneeFilters: string[];
+  epicFilter: number[];
   searchQuery: string;
   baseUrl: string;
   onUpdateStatus: (id: number, newStatus: string) => Promise<void>;
   onCreateSubItem: (id: number, title: string, areaPath: string, iterationPath: string) => void;
+  allWorkItems: AzureWorkItem[];
+  onLinkParent: (id: number) => void;
 }
 
 interface NodeViewProps {
@@ -38,10 +42,13 @@ interface NodeViewProps {
   level: number;
   selectedStoryId: number | null;
   onSelectStory: (id: number | null) => void;
-  activeOnly: boolean;
+  statusFilters: string[];
   onUpdateStatus: (id: number, newStatus: string) => Promise<void>;
   onCreateSubItem: (id: number, title: string, areaPath: string, iterationPath: string) => void;
   baseUrl: string;
+  parentEpicTitle?: string;
+  workItemLookup: Record<number, AzureWorkItem>;
+  onLinkParent: (id: number) => void;
 }
 
 const STATUS_OPTIONS = [
@@ -69,7 +76,7 @@ const getAssigneeUniqueName = (assignedTo: any): string => {
   return assignedTo.uniqueName || assignedTo.displayName || "";
 };
 
-function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onUpdateStatus, onCreateSubItem, baseUrl }: NodeViewProps) {
+function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, onUpdateStatus, onCreateSubItem, baseUrl, parentEpicTitle, workItemLookup, onLinkParent }: NodeViewProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
@@ -142,13 +149,27 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
   const hasChildren = node.children.length > 0;
   const type = node.item.fields?.["System.WorkItemType"] || "";
   const isStory = type === "User Story" || type === "Story";
+  const isEpic = type === "Epic";
   const state = node.item.fields?.["System.State"] || "New";
   const stateLower = state.toLowerCase();
+  const isActive = stateLower === "active" || stateLower === "new" || stateLower === "open" || stateLower === "to do" || stateLower === "doing" || stateLower === "inprogress" || stateLower === "in progress";
 
-  const isActive = stateLower === "active" || stateLower === "new" || stateLower === "open" || stateLower === "to do";
-  const isCompleted = ["closed", "done", "removed", "resolved"].includes(stateLower);
+  // If we don't have a parent title from the tree, try to resolve it from the flat lookup
+  const resolvedParentEpic = parentEpicTitle || (() => {
+    const getEpicTitle = (parentId: number | undefined): string | undefined => {
+      if (!parentId || !workItemLookup[parentId]) return undefined;
+      const parent = workItemLookup[parentId];
+      const pType = parent.fields["System.WorkItemType"];
+      if (pType === "Epic") return parent.fields["System.Title"];
+      if (pType === "Feature") {
+        return getEpicTitle(parent.fields["System.Parent"]);
+      }
+      return undefined;
+    };
+    return getEpicTitle(node.item.fields["System.Parent"]);
+  })();
 
-  if (!node.item.fields || (activeOnly && isCompleted && !isActive)) return null;
+  if (!node.item.fields || (statusFilters.length > 0 && !statusFilters.includes(state))) return null;
 
   const getAssigneeName = () => {
     const assignedTo = node.item.fields["System.AssignedTo"];
@@ -171,15 +192,32 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
           {/* Left accent border for active/selected */}
           <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full transition-colors ${isSelected ? 'bg-[var(--accent-blue)]' : isActive ? 'bg-[var(--accent-blue)]/40' : 'bg-[var(--border-main)]'}`} />
 
-          <div className="flex items-start gap-3 pl-2">
-            {/* Type Icon */}
-            <div className="mt-0.5 text-[var(--accent-blue)]">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg>
-            </div>
+          <div className="flex items-start pl-2">
 
             <div className="flex flex-col gap-3 flex-1 min-w-0">
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-0.5 min-w-0">
+                  {resolvedParentEpic ? (
+                    <div className="text-[10px] text-[var(--text-dim)] italic mb-1 truncate max-w-full opacity-70" title={`Parent Epic: ${resolvedParentEpic}`}>
+                      {resolvedParentEpic}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 mb-1 overflow-hidden">
+                      <div className="text-[9px] font-bold text-red-500/80 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                        <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />
+                        No Parent
+                      </div>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLinkParent(node.item.id);
+                        }}
+                        className="px-2 py-0.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[8px] font-bold transition-all border border-red-500/20 uppercase tracking-tighter shrink-0"
+                      >
+                        Link Parent
+                      </button>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mb-1">
                     <span className="px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/20 text-[var(--accent-blue)] text-[9px] font-black uppercase tracking-wider border border-[var(--accent-blue)]/30">
                       Story
@@ -287,17 +325,28 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
         {isExpanded && hasChildren && (
           <div className="flex flex-col gap-2 ml-8 mt-1 border-l-2 border-[var(--border-subtle)] pl-4 py-1">
             <div className="text-[9px] font-bold text-[var(--text-dim)] uppercase tracking-widest mb-1">Sub Tasks</div>
-            {node.children.map(child => (
+            {node.children
+              .filter(child => {
+                if (statusFilters.length > 0) {
+                  const s = child.item.fields["System.State"];
+                  return statusFilters.includes(s);
+                }
+                return true;
+              })
+              .map((child) => (
               <NodeView
                 key={child.item.id}
                 node={child}
                 level={level + 1}
                 selectedStoryId={selectedStoryId}
                 onSelectStory={onSelectStory}
-                activeOnly={activeOnly}
+                statusFilters={statusFilters}
                 onUpdateStatus={onUpdateStatus}
                 onCreateSubItem={onCreateSubItem}
+                onLinkParent={onLinkParent}
                 baseUrl={baseUrl}
+                parentEpicTitle={isEpic ? node.item.fields["System.Title"] : parentEpicTitle}
+                workItemLookup={workItemLookup}
               />
             ))}
           </div>
@@ -419,10 +468,13 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, activeOnly, onU
               level={level + 1}
               selectedStoryId={selectedStoryId}
               onSelectStory={onSelectStory}
-              activeOnly={activeOnly}
+              statusFilters={statusFilters}
               onUpdateStatus={onUpdateStatus}
               onCreateSubItem={onCreateSubItem}
+              onLinkParent={onLinkParent}
               baseUrl={baseUrl}
+              parentEpicTitle={isEpic ? node.item.fields["System.Title"] : parentEpicTitle}
+              workItemLookup={workItemLookup}
             />
           ))}
         </div>
@@ -485,13 +537,21 @@ export function HierarchyExplorer({
   isLoading,
   selectedStoryId,
   onSelectStory,
-  activeOnly,
+  statusFilters, // Added statusFilters prop
   assigneeFilters,
+  epicFilter,
   searchQuery,
   baseUrl,
   onUpdateStatus,
-  onCreateSubItem
+  onCreateSubItem,
+  onLinkParent,
+  allWorkItems,
 }: HierarchyExplorerProps) {
+  // Built-in lookup for off-sprint parent resolution
+  const workItemLookup = (allWorkItems || []).reduce((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {} as Record<number, AzureWorkItem>);
   // 1. Filter by Assignee
   const filteredByAssignee = filterHierarchy(hierarchy, assigneeFilters);
 
@@ -500,23 +560,42 @@ export function HierarchyExplorer({
 
   // 3. Filter by Status (Closed/Active)
   const visibleHierarchy = filteredBySearch.filter(node => {
-    const state = node.item.fields["System.State"]?.toLowerCase() || "";
-    const isActive = state === "active" || state === "new" || state === "open" || state === "to do";
-
-    if (!activeOnly) return true;
-    if (isActive) return true;
-
-    const hasActiveChild = (n: HierarchyNode): boolean => {
-      return n.children.some(c => {
-        const s = c.item.fields["System.State"]?.toLowerCase() || "";
-        if (s === "active" || s === "new" || s === "open" || s === "to do") return true;
-        return hasActiveChild(c);
-      });
-    };
-    return hasActiveChild(node);
+    const state = node.item.fields["System.State"];
+    if (statusFilters.length === 0) return true; // If no status filters, show all
+    // If the item itself matches or if it has visible children (handled recursively by children filter)
+    return statusFilters.includes(state);
   });
 
-  if (visibleHierarchy.length === 0 && !isLoading) {
+  // 4. Filter by Epic/Feature
+  const finalHierarchy = visibleHierarchy.filter(node => {
+    if (!epicFilter || epicFilter.length === 0) return true;
+
+    // Helper to check if any ancestor (in lookup) matches epicFilter
+    const hasFilteredAncestor = (workItem: AzureWorkItem): boolean => {
+      const parentId = workItem.fields["System.Parent"];
+      if (!parentId) return false;
+      if (epicFilter.includes(parentId)) return true;
+
+      const parent = workItemLookup[parentId];
+      if (parent) return hasFilteredAncestor(parent);
+      return false;
+    };
+
+    // Helper to check if any descendant matches epicFilter
+    const hasFilteredDescendant = (n: HierarchyNode): boolean => {
+      return n.children.some(c => {
+        if (epicFilter.includes(c.item.id)) return true;
+        return hasFilteredDescendant(c);
+      });
+    };
+
+    const isMatch = epicFilter.includes(node.item.id) || hasFilteredAncestor(node.item);
+    const isAncestorOfFiltered = hasFilteredDescendant(node);
+
+    return isMatch || isAncestorOfFiltered;
+  });
+
+  if (finalHierarchy.length === 0 && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[300px] text-[var(--text-dim)] gap-4 px-8 text-center bg-black/10 m-3 rounded-2xl border border-[var(--border-subtle)] border-dashed">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 animate-in fade-in zoom-in duration-1000"><path d="M18 10a6 6 0 0 0-12 0v8l3-2 3 2 3-2 3 2V10Z"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/></svg>
@@ -534,17 +613,19 @@ export function HierarchyExplorer({
 
   return (
     <div className="flex flex-col p-3 h-full gap-1">
-      {visibleHierarchy.map(node => (
+      {finalHierarchy.map(node => (
         <NodeView
           key={node.item.id}
           node={node}
           level={0}
           selectedStoryId={selectedStoryId}
           onSelectStory={onSelectStory}
-          activeOnly={activeOnly}
+          statusFilters={statusFilters}
           onUpdateStatus={onUpdateStatus}
           onCreateSubItem={onCreateSubItem}
+          onLinkParent={onLinkParent}
           baseUrl={baseUrl}
+          workItemLookup={workItemLookup}
         />
       ))}
     </div>

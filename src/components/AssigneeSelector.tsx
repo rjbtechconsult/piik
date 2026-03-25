@@ -92,13 +92,13 @@ export function AssigneeSelector({ teamMembers, selectedAssignees, onSelect, isL
   if (teamMembers.length === 0 && !isLoading) return null;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative w-full" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
-        className={`flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[var(--card-hover)] transition-all text-[11px] font-medium border ${selectedAssignees.length > 0 ? 'border-[var(--accent-blue)] text-[var(--accent-blue)] bg-[var(--accent-blue)]/5' : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+        className={`w-full flex items-center justify-between gap-2 px-2 py-1 rounded-md hover:bg-[var(--card-hover)] transition-all text-[11px] font-medium border ${selectedAssignees.length > 0 ? 'border-[var(--accent-blue)] text-[var(--accent-blue)] bg-[var(--accent-blue)]/5' : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
       >
-        <span className="truncate max-w-[100px]">
+        <span className="truncate text-left flex-1" title={getButtonLabel()}>
           {getButtonLabel()}
         </span>
         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>

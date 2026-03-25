@@ -15,13 +15,42 @@ interface CreateItemModalProps {
   isLoading: boolean;
   parentItem?: { id: number; title: string; areaPath: string; iterationPath: string };
   defaultAssigneeUniqueName?: string;
+  epics?: any[];
+  teams?: any[];
+  selectedTeam?: string;
+  onEpicTeamChange?: (teamName: string) => void;
 }
 
-export function CreateItemModal({ onClose, onSave, teamMembers, isLoading, parentItem, defaultAssigneeUniqueName }: CreateItemModalProps) {
+export function CreateItemModal({ 
+  onClose, 
+  onSave, 
+  teamMembers, 
+  isLoading, 
+  parentItem, 
+  defaultAssigneeUniqueName, 
+  epics = [], 
+  teams = [],
+  selectedTeam,
+  onEpicTeamChange
+}: CreateItemModalProps) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState(parentItem ? "Task" : "User Story");
   const [assignee, setAssignee] = useState(defaultAssigneeUniqueName || "");
+  const [selectedParentEpic, setSelectedParentEpic] = useState<string>("");
+  const [modalSelectedTeam, setModalSelectedTeam] = useState(selectedTeam || "");
+  const [epicSearch, setEpicSearch] = useState("");
+  const [showEpicDropdown, setShowEpicDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Filter epics based on search query
+  const filteredEpics = epics.filter(epic => {
+    if (!epicSearch) return true;
+    const searchLower = epicSearch.toLowerCase();
+    const title = (epic.fields?.["System.Title"] || "").toLowerCase();
+    const type = (epic.fields?.["System.WorkItemType"] || "").toLowerCase();
+    const id = epic.id.toString();
+    return title.includes(searchLower) || type.includes(searchLower) || id.includes(searchLower);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +58,9 @@ export function CreateItemModal({ onClose, onSave, teamMembers, isLoading, paren
 
     setIsSubmitting(true);
     try {
-      await onSave(title, type, assignee, parentItem?.id, parentItem?.areaPath);
+      // Use parentItem.id if it's a sub-item, otherwise use selectedParentEpic if it's a Story
+      const effectiveParentId = parentItem?.id || (selectedParentEpic ? parseInt(selectedParentEpic) : undefined);
+      await onSave(title, type, assignee, effectiveParentId, parentItem?.areaPath);
       onClose();
     } catch (error) {
       console.error("Failed to create item:", error);
@@ -45,8 +76,8 @@ export function CreateItemModal({ onClose, onSave, teamMembers, isLoading, paren
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-[320px] bg-[var(--card-bg)] border border-[var(--border-main)] rounded-[20px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="p-5">
+      <div className="relative w-full max-w-[340px] bg-[var(--card-bg)] border border-[var(--border-main)] rounded-[20px] shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden">
+        <div className="p-5 overflow-y-auto max-h-[85vh]">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-widest">
               {parentItem ? "New Sub-Item" : "New story"}
@@ -94,8 +125,116 @@ export function CreateItemModal({ onClose, onSave, teamMembers, isLoading, paren
                   </select>
                 </div>
               ) : (
-                <div className="hidden">
-                  <input type="hidden" value="User Story" />
+                <div className="bg-white/5 p-4 rounded-2xl border border-[var(--border-main)] space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase tracking-wider font-bold text-[var(--accent-blue)] ml-1">Team (Parent Scope)</label>
+                    <select
+                      value={modalSelectedTeam}
+                      onChange={(e) => {
+                        const newTeam = e.target.value;
+                        setModalSelectedTeam(newTeam);
+                        onEpicTeamChange?.(newTeam);
+                      }}
+                      className="w-full bg-[var(--app-bg-solid)] border border-[var(--border-main)] rounded-xl px-4 py-2.5 text-[12px] text-[var(--text-main)] focus:ring-1 focus:ring-[var(--accent-blue)] transition-all outline-none"
+                    >
+                      <option value="Global" className="bg-[var(--app-bg-solid)] font-bold italic">
+                        Project-wide (All Teams)
+                      </option>
+                      {teams.map((team) => (
+                        <option key={team.id} value={team.name} className="bg-[var(--app-bg-solid)]">
+                          {team.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5 relative">
+                    <label className="text-[10px] uppercase tracking-wider font-bold text-[var(--accent-blue)] ml-1">
+                      Epic (Parent)
+                    </label>
+                    <div 
+                      onClick={() => setShowEpicDropdown(true)}
+                      className="w-full bg-[var(--app-bg-solid)] border border-[var(--border-main)] rounded-xl px-4 py-2 text-[12px] text-[var(--text-main)] cursor-pointer hover:border-[var(--accent-blue)]/50 transition-all flex items-center justify-between group"
+                    >
+                      <span className={selectedParentEpic ? "text-[var(--text-main)] truncate max-w-[200px]" : "text-[var(--text-dim)]"}>
+                        {selectedParentEpic ? (
+                          epics.find(e => e.id.toString() === selectedParentEpic)?.fields?.["System.Title"] || `Item ${selectedParentEpic}`
+                        ) : "Select a parent..."}
+                      </span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-dim)] group-hover:text-[var(--accent-blue)] transition-colors"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+
+                    {showEpicDropdown && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-[105]" 
+                          onClick={() => {
+                            setShowEpicDropdown(false);
+                            setEpicSearch(""); 
+                          }} 
+                        />
+                        <div className="absolute top-0 left-0 right-0 max-h-[220px] overflow-hidden bg-[var(--app-bg-solid)] border border-[var(--accent-blue)]/50 rounded-2xl shadow-2xl z-[110] flex flex-col animate-in fade-in zoom-in duration-150 backdrop-blur-xl">
+                          <div className="p-2 border-b border-[var(--border-main)] bg-[var(--app-bg-solid)] relative z-[2]">
+                            <div className="relative">
+                              <input
+                                autoFocus
+                                type="text"
+                                value={epicSearch}
+                                onChange={(e) => setEpicSearch(e.target.value)}
+                                placeholder="Filter list..."
+                                className="w-full bg-black/40 border border-[var(--border-main)] rounded-lg px-8 py-1.5 text-[11px] text-[var(--text-main)] outline-none focus:border-[var(--accent-blue)]/50 placeholder:text-[var(--text-dim)]"
+                              />
+                              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-dim)]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="overflow-y-auto flex-1 custom-scrollbar min-h-0 relative z-[1]">
+                            <div 
+                              className="px-4 py-2 hover:bg-[var(--accent-blue)]/10 cursor-pointer text-[11px] text-[var(--text-dim)] border-b border-[var(--border-main)] transition-colors sticky top-0 bg-[var(--app-bg-solid)] z-[1]"
+                              onClick={() => {
+                                setSelectedParentEpic("");
+                                setEpicSearch("");
+                                setShowEpicDropdown(false);
+                              }}
+                            >
+                              No Epic (Root)
+                            </div>
+                            {isLoading ? (
+                              <div className="px-4 py-8 text-center text-[10px] text-[var(--text-dim)]">
+                                Fetching items...
+                              </div>
+                            ) : filteredEpics.length === 0 ? (
+                              <div className="px-4 py-8 text-center text-[10px] text-[var(--text-dim)]">
+                                No matching items found
+                              </div>
+                            ) : (
+                              filteredEpics.map((epic) => (
+                                <div
+                                  key={epic.id}
+                                  className={`px-4 py-1.5 hover:bg-[var(--accent-blue)]/10 cursor-pointer text-[11px] text-[var(--text-main)] border-b last:border-0 border-[var(--border-main)] transition-all flex flex-col gap-0 ${selectedParentEpic === epic.id.toString() ? 'bg-[var(--accent-blue)]/5 border-l-2 border-l-[var(--accent-blue)]' : ''}`}
+                                  onClick={() => {
+                                    setSelectedParentEpic(epic.id.toString());
+                                    setEpicSearch("");
+                                    setShowEpicDropdown(false);
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2 opacity-70">
+                                    <span className="text-[7px] uppercase tracking-tighter font-black text-[var(--accent-blue)] px-1 rounded-sm bg-[var(--accent-blue)]/10">
+                                      {epic.fields?.["System.WorkItemType"]}
+                                    </span>
+                                    <span className="text-[8px]">#{epic.id}</span>
+                                  </div>
+                                  <span className="truncate font-medium">{epic.fields?.["System.Title"] || `Item ${epic.id}`}</span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 

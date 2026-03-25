@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 import { SettingsModal } from "./components/SettingsModal";
@@ -6,12 +6,14 @@ import { TeamSelector } from "./components/TeamSelector";
 import { IterationSelector } from "./components/IterationSelector";
 import { HierarchyExplorer } from "./components/HierarchyExplorer";
 import { CreateItemModal } from "./components/CreateItemModal";
+import { LinkParentModal } from "./components/LinkParentModal";
 import { AssigneeSelector } from "./components/AssigneeSelector";
+import { EpicFeatureSelector } from "./components/EpicFeatureSelector";
+import { StatusSelector } from "./components/StatusSelector";
 import { getSetting, saveSetting } from "./lib/db";
-import Switch from "./components/Switch";
 import "./App.css";
 
-interface AzureWorkItem {
+export interface AzureWorkItem {
   id: number;
   fields: {
     "System.Title": string;
@@ -89,7 +91,7 @@ function App() {
   const [iterations, setIterations] = useState<any[]>([]);
   const [selectedIteration, setSelectedIteration] = useState<any | null>(null);
   const [selectedStoryId, setSelectedStoryId] = useState<number | null>(null);
-  const [activeOnly, setActiveOnly] = useState(true);
+  const [statusFilters, setStatusFilters] = useState<string[]>(["New", "Active", "To Do", "Doing", "InProgress", "In-Progress", "Open", "Approved", "Committed"]);
   const [hierarchy, setHierarchy] = useState<HierarchyNode[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [teamSettings, setTeamSettings] = useState<{ defaultAreaPath: string | null }>({ defaultAreaPath: null });
@@ -97,13 +99,19 @@ function App() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [assigneeFilter, setAssigneeFilter] = useState<string[]>([]);
+  const [epicFilter, setEpicFilter] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [theme, setTheme] = useState<string>("dark");
   const [creatingSubItemFor, setCreatingSubItemFor] = useState<{ id: number; title: string; areaPath: string; iterationPath: string } | null>(null);
+  const [linkingParentFor, setLinkingParentFor] = useState<{ id: number; title: string } | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [azureConfig, setAzureConfig] = useState<{ org: string; project: string }>({ org: "", project: "" });
+  const [epics, setEpics] = useState<any[]>([]);
+  const [isEpicsLoading, setIsEpicsLoading] = useState(false);
+  const [allWorkItems, setAllWorkItems] = useState<any[]>([]);
  
   const lastWorkItemsRef = useRef<Record<number, string | null>>({});
   const appStartTimeRef = useRef<Date>(new Date());
@@ -209,19 +217,31 @@ function App() {
       );
 
       // Only count active Tasks and Bugs
-      const isActiveState = ["new", "active", "open", "to do", "committed", "doing", "approved"].includes(state);
       const isWorkItem = type === "Task" || type === "Bug";
       
-      return isMe && isWorkItem && isActiveState;
+      return isMe && isWorkItem && statusFilters.map(s => s.toLowerCase()).includes(state);
     });
     
     invoke("update_tray_badge", { count: myTasks.length }).catch(console.error);
   };
 
+  const availableStatuses = useMemo(() => {
+    const states = new Set<string>();
+    allWorkItems.forEach(item => {
+      if (item.fields["System.State"]) {
+        states.add(item.fields["System.State"]);
+      }
+    });
+    // Ensure default active states are available as options even if not present in current items
+    const defaults = ["New", "Active", "Resolved", "Closed", "To Do", "Doing", "Done", "Removed", "Approved", "Committed"];
+    defaults.forEach(s => states.add(s));
+    return Array.from(states).sort();
+  }, [allWorkItems]);
+
   // Update tray badge whenever the current user or hierarchy changes
   useEffect(() => {
     refreshTrayBadge();
-  }, [currentUser, hierarchy]);
+  }, [currentUser, hierarchy, statusFilters]);
 
   useEffect(() => {
     if (selectedTeam) {
@@ -241,12 +261,14 @@ function App() {
       fetchIterations();
       fetchTeamMembers();
       fetchTeamSettings();
+      fetchEpicsForTeam(selectedTeam);
       setSelectedStoryId(null);
     } else {
       setIterations([]);
       setSelectedIteration(null);
       setSelectedStoryId(null);
       setTeamSettings({ defaultAreaPath: null });
+      setEpics([]);
     }
   }, [selectedTeam]);
 
@@ -359,6 +381,7 @@ function App() {
       if (hData.workItems && hData.relations) {
         const tree = buildTree(hData.workItems, hData.relations);
         setHierarchy(tree);
+        setAllWorkItems(hData.workItems);
         refreshTrayBadge(hData.workItems);
 
         const newItems = hData.workItems as any[];
@@ -423,29 +446,47 @@ function App() {
     }
   };
 
-  const fetchTeamSettings = async () => {
+  const fetchTeamSettings = async (teamName?: string) => {
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
       let token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => "");
       if (!token) token = (await getSetting("azure_pat")) || "";
 
-      if (!org || !project || !token || !selectedTeam) return;
+      const teamToFetch = teamName || selectedTeam;
+      if (!org || !project || !token || !teamToFetch) return null;
 
       const settingsData: any = await invoke("fetch_azure_team_settings", {
         organization: org,
         project,
-        team: selectedTeam,
+        team: teamToFetch,
         token
       });
 
       if (settingsData && settingsData.defaultValue) {
-        setTeamSettings({ defaultAreaPath: settingsData.defaultValue });
-        console.log("App: Team default area path set to:", settingsData.defaultValue);
+        if (!teamName || teamName === selectedTeam) {
+          setTeamSettings({ defaultAreaPath: settingsData.defaultValue });
+          console.log("App: Team default area path set to:", settingsData.defaultValue);
+        }
+        return settingsData.defaultValue;
       }
+      return null;
     } catch (err) {
       console.error("App: Failed to fetch team settings:", err);
+      return null;
     }
+  };
+
+  const fetchEpicsForTeam = async (teamName: string) => {
+    console.log(`App: fetchEpicsForTeam triggered for: "${teamName}"`);
+    if (!teamName || teamName === "Global") {
+      console.log("App: Fetching epics with Global scope (no area path filter)");
+      await fetchEpics(undefined);
+      return;
+    }
+    const areaPath = await fetchTeamSettings(teamName);
+    console.log(`App: Team "${teamName}" mapped to area path:`, areaPath);
+    await fetchEpics(areaPath || undefined, undefined, false); // Exact match for team
   };
 
   const fetchTeamMembers = async () => {
@@ -470,6 +511,69 @@ function App() {
       }
     } catch (err) {
       console.error("Failed to fetch team members:", err);
+    }
+  };
+
+  const fetchEpics = async (areaPath?: string, configOverride?: { org: string; project: string }, recursive: boolean = true) => {
+    setIsEpicsLoading(true);
+    try {
+      const org = configOverride?.org || azureConfig.org || await getSetting("azure_org") || localStorage.getItem("azure_org");
+      const project = configOverride?.project || azureConfig.project || await getSetting("azure_project") || localStorage.getItem("azure_project");
+      let token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => "");
+      if (!token) token = (await getSetting("azure_pat")) || "";
+
+      if (!org || !project || !token) {
+        setIsEpicsLoading(false);
+        return;
+      }
+
+      console.log(`App: Invoking fetch_azure_epics for area: "${areaPath}", recursive: ${recursive}`);
+      const data: any = await invoke("fetch_azure_epics", {
+        organization: org,
+        project,
+        token,
+        area_path: areaPath || null,
+        recursive
+      });
+
+      console.log(`App: fetch_azure_epics returned ${Array.isArray(data) ? data.length : 0} items for path: ${areaPath || "Project Root"}`);
+
+      if (Array.isArray(data)) {
+        setEpics(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch epics:", err);
+    } finally {
+      setIsEpicsLoading(false);
+    }
+  };
+
+  const handleLinkParent = async (parentId: number) => {
+    if (!linkingParentFor) return;
+    try {
+      const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
+      const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
+      let token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => "");
+      if (!token) token = (await getSetting("azure_pat")) || "";
+
+      if (!org || !project || !token) return;
+
+      await invoke("update_azure_item_parent", { 
+        organization: org, 
+        project: project, 
+        token: token, 
+        id: linkingParentFor.id, 
+        parentId: parentId 
+      });
+      
+      // Refresh hierarchy to show the new relationship
+      if (selectedIteration) {
+        await fetchHierarchy(selectedIteration.id, true);
+      }
+      setLinkingParentFor(null);
+    } catch (err: any) {
+      console.error("Failed to link parent:", err);
+      setError(err.toString());
     }
   };
 
@@ -657,6 +761,14 @@ function App() {
                 </button>
               )}
               <button
+                onClick={() => isConnected && setIsFilterOpen(!isFilterOpen)}
+                disabled={!isConnected}
+                className={`p-1.5 rounded-lg transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${isFilterOpen ? 'bg-[var(--accent-blue)]/20 text-[var(--accent-blue)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                title="Filters"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              </button>
+              <button
                 onClick={() => isConnected && (selectedTeam ? fetchHierarchy() : fetchTeams())}
                 disabled={isLoading || !isConnected}
                 className="p-1.5 rounded-lg text-[var(--text-dim)] hover:text-[var(--text-main)] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale cursor-pointer"
@@ -689,27 +801,46 @@ function App() {
             </div>
           </div>
 
-          {selectedTeam && (
-            <div className="px-3 pb-3 pt-3 flex items-center justify-between border-t border-[var(--border-subtle)] bg-[var(--card-bg-subtle)]">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={activeOnly}
-                  onChange={setActiveOnly}
-                  label="Active"
-                />
-                <AssigneeSelector
-                  teamMembers={teamMembers}
-                  selectedAssignees={assigneeFilter}
-                  onSelect={setAssigneeFilter}
-                  isLoading={isLoading}
-                />
+          {selectedTeam && isFilterOpen && (
+            <div className="px-3 pb-4 pt-4 flex flex-col gap-4 border-t border-[var(--border-subtle)] bg-[var(--card-bg-subtle)] animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <div className="flex flex-col gap-1.5 min-w-0">
+                  <div className="text-[9px] font-bold text-[var(--text-dim)] uppercase tracking-widest pl-0.5">Status</div>
+                  <StatusSelector
+                    availableStatuses={availableStatuses}
+                    selectedStatuses={statusFilters}
+                    onSelect={setStatusFilters}
+                    isLoading={isLoading}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 min-w-0">
+                  <div className="text-[9px] font-bold text-[var(--text-dim)] uppercase tracking-widest pl-0.5">Iteration</div>
+                  <IterationSelector
+                    iterations={iterations}
+                    selectedIteration={selectedIteration}
+                    onSelect={setSelectedIteration}
+                    isLoading={isLoading}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 min-w-0">
+                  <div className="text-[9px] font-bold text-[var(--text-dim)] uppercase tracking-widest pl-0.5">Assignee</div>
+                  <AssigneeSelector
+                    teamMembers={teamMembers}
+                    selectedAssignees={assigneeFilter}
+                    onSelect={setAssigneeFilter}
+                    isLoading={isLoading}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 min-w-0">
+                  <div className="text-[9px] font-bold text-[var(--text-dim)] uppercase tracking-widest pl-0.5">Epic/Feature</div>
+                  <EpicFeatureSelector
+                    items={epics}
+                    selectedIds={epicFilter}
+                    onSelect={setEpicFilter}
+                    isLoading={isEpicsLoading || isLoading}
+                  />
+                </div>
               </div>
-              <IterationSelector
-                iterations={iterations}
-                selectedIteration={selectedIteration}
-                onSelect={setSelectedIteration}
-                isLoading={isLoading}
-              />
             </div>
           )}
         </div>
@@ -777,15 +908,27 @@ function App() {
             isLoading={isLoading}
             selectedStoryId={selectedStoryId}
             onSelectStory={setSelectedStoryId}
-            activeOnly={activeOnly}
+            statusFilters={statusFilters}
             assigneeFilters={assigneeFilter}
+            epicFilter={epicFilter}
             searchQuery={searchQuery}
             baseUrl={azureConfig.org && azureConfig.project ? `https://dev.azure.com/${azureConfig.org}/${azureConfig.project}/_workitems/edit/` : ""}
             onUpdateStatus={handleUpdateStatus}
-            onCreateSubItem={(id, title, areaPath, iterationPath) => {
+            onCreateSubItem={(id: number, title: string, areaPath: string, iterationPath: string) => {
               setCreatingSubItemFor({ id, title, areaPath, iterationPath });
               setShowCreateModal(true);
             }}
+            onLinkParent={(id: number) => {
+              const item = allWorkItems.find(i => i.id === id);
+              if (item) {
+                setLinkingParentFor({ id, title: item.fields["System.Title"] });
+                // Ensure epics list is scoped to current team before opening modal
+                if (selectedTeam) {
+                  fetchEpicsForTeam(selectedTeam);
+                }
+              }
+            }}
+            allWorkItems={allWorkItems}
           />
           )}
         </div>
@@ -798,9 +941,13 @@ function App() {
             }}
             onSave={handleCreateWorkItem}
             teamMembers={teamMembers}
-            isLoading={isLoading}
+            isLoading={isEpicsLoading}
             parentItem={creatingSubItemFor || undefined}
             defaultAssigneeUniqueName={currentUser?.uniqueName}
+            epics={epics}
+            teams={teams}
+            selectedTeam={selectedTeam || undefined}
+            onEpicTeamChange={fetchEpicsForTeam}
           />
         )}
 
@@ -817,6 +964,16 @@ function App() {
             }}
             onDisconnect={handleDisconnect}
             isConnected={teams.length > 0}
+          />
+        )}
+
+        {linkingParentFor && (
+          <LinkParentModal
+            workItem={linkingParentFor}
+            epics={epics}
+            isLoading={isEpicsLoading}
+            onClose={() => setLinkingParentFor(null)}
+            onLink={handleLinkParent}
           />
         )}
       </div>
