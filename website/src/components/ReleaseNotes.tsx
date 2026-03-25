@@ -13,10 +13,10 @@ export const ReleaseNotes: React.FC = () => {
            transition={{ duration: 0.5 }}
            style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
-          <span className="badge">v0.2.0 Update</span>
-          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Balanced Filter UI</h2>
+          <span className="badge">v0.2.1 Update</span>
+          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Inline Editing & UI Stability</h2>
           <p style={{ margin: '0 auto', maxWidth: '600px' }}>
-            Major improvements to work item discovery and terminology alignment for a more professional workflow.
+            A major leap in productivity with in-place editing and a deterministic layout engine for consistent navigation.
           </p>
         </motion.div>
 
@@ -27,7 +27,7 @@ export const ReleaseNotes: React.FC = () => {
           maxWidth: '1100px',
           margin: '0 auto'
         }}>
-           {/* Card 1: Symmetric Filter Grid */}
+           {/* Card 1: Inline Editing */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -49,13 +49,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Symmetric Filter Grid</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Inline Title Editing</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                The filter panel now uses a balanced 2x2 grid for Status, Iteration, Assignee, and Epic filters, ensuring a clean, professional look with maximum space for all labels.
+                Edit your stories, tasks, and bugs directly in the Hierarchy Explorer. No more context switching to Azure DevOps—just click, edit, and save.
              </p>
            </motion.div>
 
-           {/* Card 2: Terminology Alignment */}
+           {/* Card 2: Deterministic Stability */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -77,13 +77,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Sparkles size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Native Terminology</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Rock-Solid Stability</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Renamed "Sprints" to **Iterations** across the board. Piik now perfectly aligns with Azure DevOps terminology, providing a familiar experience for enterprise teams.
+                Implemented recursive stable sorting by ID across our backend and frontend. Your items stay exactly where you left them, even during silent background refreshes.
              </p>
            </motion.div>
 
-           {/* Card 3: Advanced Filtering */}
+           {/* Card 3: UX & Performance */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -100,14 +100,14 @@ export const ReleaseNotes: React.FC = () => {
                display: 'flex', 
                alignItems: 'center', 
                justifyContent: 'center',
-               color: '#10b981',
+               color: 'var(--accent-green)',
                marginBottom: '1.5rem'
              }}>
                 <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Epic/Feature Depth</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>UX Refinements</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Filter by and view Parent Epics and Features directly on your story cards, with smart sync that finds items even if they aren't in your current sprint.
+                Full title visibility for all work items with smart text-wrapping, combined with pointer cursors and optimized icon placement for a truly premium experience.
              </p>
            </motion.div>
         </div>
