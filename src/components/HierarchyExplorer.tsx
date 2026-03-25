@@ -80,6 +80,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
   const [isUpdating, setIsUpdating] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [copyTitleFeedback, setCopyTitleFeedback] = useState(false);
   const [allowedStates, setAllowedStates] = useState<string[]>(STATUS_OPTIONS);
 
   useEffect(() => {
@@ -129,6 +130,15 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
     navigator.clipboard.writeText(itemUrl);
     setCopyFeedback(true);
     setTimeout(() => setCopyFeedback(false), 2000);
+  };
+
+  const handleCopyTitle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const title = node.item.fields["System.Title"];
+    if (!title) return;
+    navigator.clipboard.writeText(title);
+    setCopyTitleFeedback(true);
+    setTimeout(() => setCopyTitleFeedback(false), 2000);
   };
 
   const handleOpen = async (e: React.MouseEvent) => {
@@ -225,16 +235,27 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                     <span className="text-[11px] font-bold text-[var(--text-dim)] tracking-tight flex items-center gap-1.5">
                       #{node.item.id} 
                       <span className="text-[var(--text-dim)]/50">•</span>
-                      <div className="flex items-center gap-1 ml-1">
+                      <div className="flex items-center gap-1 ml-1 scale-90 origin-left">
                         <button
                           onClick={handleCopy}
                           className={`p-1 rounded hover:bg-[var(--accent-blue)]/10 transition-colors cursor-pointer ${copyFeedback ? 'text-green-500' : 'text-[var(--text-dim)] hover:text-[var(--accent-blue)]'}`}
-                          title={copyFeedback ? "Copied!" : "Copy Link"}
+                          title={copyFeedback ? "Link Copied!" : "Copy Work Item Link"}
                         >
                           {copyFeedback ? (
                             <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                           ) : (
                             <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                          )}
+                        </button>
+                        <button
+                          onClick={handleCopyTitle}
+                          className={`p-1 rounded hover:bg-orange-500/10 transition-colors cursor-pointer ${copyTitleFeedback ? 'text-orange-500' : 'text-[var(--text-dim)] hover:text-orange-400'}`}
+                          title={copyTitleFeedback ? "Title Copied!" : "Copy Work Item Title"}
+                        >
+                          {copyTitleFeedback ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
                           )}
                         </button>
                         <button
@@ -390,12 +411,23 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
               <button
                 onClick={handleCopy}
                 className={`p-0.5 rounded hover:bg-[var(--accent-blue)]/10 transition-all cursor-pointer ${copyFeedback ? 'text-green-500' : 'text-[var(--text-dim)] hover:text-[var(--accent-blue)]'}`}
-                title={copyFeedback ? "Copied!" : "Copy Link"}
+                title={copyFeedback ? "Link Copied!" : "Copy Link"}
               >
                 {copyFeedback ? (
                   <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                )}
+              </button>
+              <button
+                onClick={handleCopyTitle}
+                className={`p-0.5 rounded hover:bg-orange-500/10 transition-all cursor-pointer ${copyTitleFeedback ? 'text-orange-500' : 'text-[var(--text-dim)] hover:text-orange-400'}`}
+                title={copyTitleFeedback ? "Title Copied!" : "Copy Title"}
+              >
+                {copyTitleFeedback ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
                 )}
               </button>
               <button
