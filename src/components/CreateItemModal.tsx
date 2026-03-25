@@ -225,8 +225,13 @@ export function CreateItemModal({
                                       {epic.fields?.["System.WorkItemType"]}
                                     </span>
                                     <span className="text-[8px]">#{epic.id}</span>
+                                    <span className="text-[8px] ml-auto text-[var(--accent-blue)] font-bold">{epic.fields?.["System.State"]}</span>
                                   </div>
                                   <span className="truncate font-medium">{epic.fields?.["System.Title"] || `Item ${epic.id}`}</span>
+                                  <span className="text-[9px] text-[var(--text-dim)] truncate mt-0.5 italic flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    {epic.fields?.["System.AreaPath"]}
+                                  </span>
                                 </div>
                               ))
                             )}

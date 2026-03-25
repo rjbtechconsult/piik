@@ -31,13 +31,13 @@ export function TeamSelector({ teams, selectedTeam, onSelect, disabled = false }
       <button
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`flex items-center gap-2 py-1.5 rounded-lg text-[var(--text-main)] transition-all active:scale-95 group px-3 ${disabled ? 'opacity-40 cursor-not-allowed filter grayscale' : ''}`}
+        className={`w-full flex items-center gap-2 py-1.5 rounded-lg text-[var(--text-main)] transition-all active:scale-95 group px-2 ${disabled ? 'opacity-40 cursor-not-allowed filter grayscale' : ''}`}
       >
-        <div className="p-1 rounded bg-[var(--card-bg-subtle)] group-hover:bg-[var(--card-hover)] transition-colors">
+        <div className="p-1 rounded bg-[var(--card-bg-subtle)] group-hover:bg-[var(--card-hover)] transition-colors shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </div>
-        <span className="text-sm font-semibold truncate max-w-[140px]">{selectedTeam || "Select Sprint Team"}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
+        <span className="text-xs font-bold truncate min-w-0 text-left flex-1">{selectedTeam || "Select Sprint Team"}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-[var(--text-dim)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
       </button>
 
       {isOpen && (

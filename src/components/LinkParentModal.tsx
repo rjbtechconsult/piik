@@ -98,20 +98,36 @@ export function LinkParentModal({
                 <div
                   key={epic.id}
                   onClick={() => setSelectedParentId(epic.id)}
-                  className={`relative px-4 py-2 hover:bg-[var(--accent-blue)]/10 cursor-pointer text-[11px] text-[var(--text-main)] transition-all flex flex-col gap-0 ${selectedParentId === epic.id ? 'bg-[var(--accent-blue)]/5 border-l-2 border-l-[var(--accent-blue)]' : ''}`}
+                  className={`p-3.5 cursor-pointer transition-all border-l-2 ${
+                    selectedParentId === epic.id 
+                      ? 'bg-[var(--accent-blue)]/10 border-[var(--accent-blue)]' 
+                      : 'hover:bg-white/5 border-transparent'
+                  }`}
                 >
-                  <div className="flex items-center gap-2 opacity-70">
-                    <span className="text-[7px] uppercase tracking-tighter font-black text-[var(--accent-blue)] px-1 rounded-sm bg-[var(--accent-blue)]/10">
-                      {epic.fields?.["System.WorkItemType"]}
-                    </span>
-                    <span className="text-[8px]">#{epic.id}</span>
-                  </div>
-                  <span className="truncate font-medium pr-8">{epic.fields?.["System.Title"] || `Item ${epic.id}`}</span>
-                  {selectedParentId === epic.id && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--accent-blue)] animate-in zoom-in duration-150">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 bg-[var(--accent-blue)]/20 text-[8px] font-black text-[var(--accent-blue)] uppercase rounded tracking-wider shrink-0">
+                        {epic.fields["System.WorkItemType"]}
+                      </span>
+                      <span className="text-[10px] font-mono text-[var(--text-dim)] shrink-0">
+                        #{epic.id}
+                      </span>
                     </div>
-                  )}
+                    <span className={`px-1.5 py-0.5 text-[8px] font-bold uppercase rounded-full tracking-tight ${
+                      (epic.fields["System.State"] || "").includes("Active") || (epic.fields["System.State"] || "").includes("Progress")
+                        ? "bg-green-500/10 text-green-400"
+                        : "bg-gray-500/10 text-[var(--text-dim)]"
+                    }`}>
+                      {epic.fields["System.State"]}
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-semibold text-[var(--text-main)] mb-1 leading-snug">
+                    {epic.fields["System.Title"]}
+                  </div>
+                  <div className="text-[9px] text-[var(--text-dim)] flex items-center gap-1.5 font-medium overflow-hidden whitespace-nowrap">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 opacity-50"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span className="truncate">{epic.fields["System.AreaPath"]}</span>
+                  </div>
                 </div>
               ))
             )}

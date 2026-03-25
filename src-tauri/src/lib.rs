@@ -750,6 +750,8 @@ async fn fetch_azure_epics(organization: String, project: String, token: String,
         "query": query_str
     });
 
+    println!("Backend: Executing WIQL for epics: {}", query_str);
+
     let res = client.post(&url)
         .basic_auth("", Some(token.clone()))
         .json(&query)
@@ -778,7 +780,7 @@ async fn fetch_azure_epics(organization: String, project: String, token: String,
             for chunk in ids.chunks(200) {
                 let details_query = serde_json::json!({
                     "ids": chunk,
-                    "fields": ["System.Id", "System.Title", "System.WorkItemType", "System.State"]
+                    "fields": ["System.Id", "System.Title", "System.WorkItemType", "System.State", "System.AreaPath"]
                 });
                 
                 let details_res = client.post(&details_url)

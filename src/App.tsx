@@ -463,12 +463,23 @@ function App() {
         token
       });
 
-      if (settingsData && settingsData.defaultValue) {
+      if (settingsData && (settingsData.defaultValue || settingsData.field?.referenceName === 'System.AreaPath')) {
+        // If defaultValue is an object (unexpected but possible), try to get path
+        const defaultValue = typeof settingsData.defaultValue === 'string' 
+          ? settingsData.defaultValue 
+          : (settingsData.defaultValue?.path || null);
+        
         if (!teamName || teamName === selectedTeam) {
-          setTeamSettings({ defaultAreaPath: settingsData.defaultValue });
-          console.log("App: Team default area path set to:", settingsData.defaultValue);
+          setTeamSettings({ defaultAreaPath: defaultValue });
+          console.log("App: Team default area path set to:", defaultValue);
         }
-        return settingsData.defaultValue;
+        
+        // Find if the default area path has recursive inclusion
+        const defaultPathValue = settingsData.values?.find((v: any) => v.value === defaultValue);
+        return {
+          path: defaultValue,
+          recursive: defaultPathValue?.includeChildren ?? false
+        };
       }
       return null;
     } catch (err) {
@@ -484,9 +495,14 @@ function App() {
       await fetchEpics(undefined);
       return;
     }
-    const areaPath = await fetchTeamSettings(teamName);
-    console.log(`App: Team "${teamName}" mapped to area path:`, areaPath);
-    await fetchEpics(areaPath || undefined, undefined, false); // Exact match for team
+    const settings = await fetchTeamSettings(teamName);
+    if (settings && settings.path) {
+      console.log(`App: Team "${teamName}" mapped to area path:`, settings.path, "Recursive:", settings.recursive);
+      await fetchEpics(settings.path, undefined, settings.recursive);
+    } else {
+      console.warn(`App: No area path found for team "${teamName}", falling back to project scope`);
+      await fetchEpics(undefined);
+    }
   };
 
   const fetchTeamMembers = async () => {
@@ -516,6 +532,7 @@ function App() {
 
   const fetchEpics = async (areaPath?: string, configOverride?: { org: string; project: string }, recursive: boolean = true) => {
     setIsEpicsLoading(true);
+    setEpics([]); // Clear previous results immediately
     try {
       const org = configOverride?.org || azureConfig.org || await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = configOverride?.project || azureConfig.project || await getSetting("azure_project") || localStorage.getItem("azure_project");
@@ -539,7 +556,21 @@ function App() {
       console.log(`App: fetch_azure_epics returned ${Array.isArray(data) ? data.length : 0} items for path: ${areaPath || "Project Root"}`);
 
       if (Array.isArray(data)) {
-        setEpics(data);
+        // STRICT FRONTEND FILTER: Ensure results honor the area path even if backend query was broad
+        let filteredData = data;
+        if (areaPath) {
+          const lowerPath = areaPath.toLowerCase();
+          filteredData = data.filter((epic: any) => {
+            const epicPath = (epic.fields?.["System.AreaPath"] || "").toLowerCase();
+            if (recursive) {
+              return epicPath === lowerPath || epicPath.startsWith(lowerPath + "\\");
+            } else {
+              return epicPath === lowerPath;
+            }
+          });
+          console.log(`App: Post-filter count: ${filteredData.length} (Filter: ${areaPath}, Recursive: ${recursive})`);
+        }
+        setEpics(filteredData);
       }
     } catch (err) {
       console.error("Failed to fetch epics:", err);
@@ -802,14 +833,16 @@ function App() {
                 </button>
               </div>
             ) : (
-              <TeamSelector
-                teams={teams}
-                selectedTeam={selectedTeam}
-                onSelect={(name) => setSelectedTeam(name)}
-                disabled={!isConnected}
-              />
+              <div className="flex-1 min-w-0">
+                <TeamSelector
+                  teams={teams}
+                  selectedTeam={selectedTeam}
+                  onSelect={(name) => setSelectedTeam(name)}
+                  disabled={!isConnected}
+                />
+              </div>
             )}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               {!isSearchOpen && (
                 <button
                   onClick={() => isConnected && setIsSearchOpen(true)}
