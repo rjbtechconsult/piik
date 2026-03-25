@@ -41,7 +41,7 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "bundleVersion": "34"
+      "bundleVersion": "35"
     }
   }
 }

@@ -36,6 +36,7 @@ interface HierarchyExplorerProps {
   onCreateSubItem: (id: number, title: string, areaPath: string, iterationPath: string) => void;
   allWorkItems: AzureWorkItem[];
   onLinkParent: (id: number) => void;
+  expandAll?: boolean;
 }
 
 interface NodeViewProps {
@@ -51,6 +52,7 @@ interface NodeViewProps {
   parentEpicTitle?: string;
   workItemLookup: Record<number, AzureWorkItem>;
   onLinkParent: (id: number) => void;
+  expandAll: boolean;
 }
 
 const STATUS_OPTIONS = [
@@ -78,7 +80,7 @@ const getAssigneeUniqueName = (assignedTo: any): string => {
   return assignedTo.uniqueName || assignedTo.displayName || "";
 };
 
-function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, onUpdateStatus, onUpdateTitle, onCreateSubItem, baseUrl, parentEpicTitle, workItemLookup, onLinkParent }: NodeViewProps) {
+function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, onUpdateStatus, onUpdateTitle, onCreateSubItem, baseUrl, parentEpicTitle, workItemLookup, onLinkParent, expandAll }: NodeViewProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
@@ -184,6 +186,12 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
 
   const isSelected = selectedStoryId === node.item.id;
   const [isExpanded, setIsExpanded] = useState(level < 1 || isSelected);
+
+  // Sync with global expand/collapse toggle
+  useEffect(() => {
+    setIsExpanded(expandAll);
+  }, [expandAll]);
+
   const hasChildren = node.children.length > 0;
   const type = node.item.fields?.["System.WorkItemType"] || "";
   const isStory = type === "User Story" || type === "Story";
@@ -390,7 +398,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
               node.children
                 .filter(child => statusFilters.length === 0 || statusFilters.includes(child.item.fields["System.State"]))
                 .map(child => (
-                  <NodeView key={child.item.id} node={child} level={level + 1} selectedStoryId={selectedStoryId} onSelectStory={onSelectStory} statusFilters={statusFilters} onUpdateStatus={onUpdateStatus} onUpdateTitle={onUpdateTitle} onCreateSubItem={onCreateSubItem} baseUrl={baseUrl} parentEpicTitle={resolvedParentEpic} workItemLookup={workItemLookup} onLinkParent={onLinkParent} />
+                  <NodeView key={child.item.id} node={child} level={level + 1} selectedStoryId={selectedStoryId} onSelectStory={onSelectStory} statusFilters={statusFilters} onUpdateStatus={onUpdateStatus} onUpdateTitle={onUpdateTitle} onCreateSubItem={onCreateSubItem} baseUrl={baseUrl} parentEpicTitle={resolvedParentEpic} workItemLookup={workItemLookup} onLinkParent={onLinkParent} expandAll={expandAll} />
                 ))
             ) : (
               <div className="text-[10px] text-[var(--text-dim)] italic p-2 border border-dashed border-[var(--border-subtle)] rounded-lg text-center">
@@ -516,7 +524,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
       {isExpanded && hasChildren && (
         <div className="flex flex-col gap-1 ml-6 mt-0.5 border-l border-[var(--border-subtle)] pl-4 pb-2">
           {node.children.map(child => (
-            <NodeView key={child.item.id} node={child} level={level + 1} selectedStoryId={selectedStoryId} onSelectStory={onSelectStory} statusFilters={statusFilters} onUpdateStatus={onUpdateStatus} onUpdateTitle={onUpdateTitle} onCreateSubItem={onCreateSubItem} baseUrl={baseUrl} parentEpicTitle={resolvedParentEpic} workItemLookup={workItemLookup} onLinkParent={onLinkParent} />
+            <NodeView key={child.item.id} node={child} level={level + 1} selectedStoryId={selectedStoryId} onSelectStory={onSelectStory} statusFilters={statusFilters} onUpdateStatus={onUpdateStatus} onUpdateTitle={onUpdateTitle} onCreateSubItem={onCreateSubItem} baseUrl={baseUrl} parentEpicTitle={resolvedParentEpic} workItemLookup={workItemLookup} onLinkParent={onLinkParent} expandAll={expandAll} />
           ))}
         </div>
       )}
@@ -578,6 +586,8 @@ export function HierarchyExplorer({ hierarchy, isLoading, selectedStoryId, onSel
 
   const filteredHierarchy = filterHierarchy(hierarchy, assigneeFilters, searchQuery, statusFilters, epicFilter, workItemLookup);
 
+  const [isExpandAll, setIsExpandAll] = useState(true);
+
   if (filteredHierarchy.length === 0 && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[300px] text-[var(--text-dim)] gap-4 px-8 text-center bg-black/10 m-3 rounded-2xl border border-[var(--border-subtle)] border-dashed">
@@ -592,8 +602,25 @@ export function HierarchyExplorer({ hierarchy, isLoading, selectedStoryId, onSel
 
   return (
     <div className="flex flex-col gap-3 p-3 pt-4 custom-scrollbar">
+      <div className="flex items-center justify-between px-1 mb-1">
+        <div className="text-[10px] font-bold text-[var(--text-dim)] uppercase tracking-widest flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 2v20"/><path d="M10 7h6"/><path d="M10 11h6"/><path d="M10 15h6"/></svg>
+          Work Items
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setIsExpandAll(!isExpandAll)}
+            className="flex items-center gap-2 px-2 py-1 rounded-lg text-[9px] font-bold text-[var(--text-dim)] hover:text-[var(--text-main)] transition-all group"
+          >
+            <span>Expand all</span>
+            <div className={`w-6 h-3.5 rounded-full relative transition-all duration-300 border border-[var(--border-subtle)] ${isExpandAll ? "bg-[var(--accent-blue)] border-[var(--accent-blue)]/50" : "bg-white/5"}`}>
+              <div className={`absolute top-0.5 bottom-0.5 w-2 rounded-full transition-all duration-300 shadow-sm ${isExpandAll ? "left-3 bg-white" : "left-0.5 bg-[var(--text-dim)]"}`}></div>
+            </div>
+          </button>
+        </div>
+      </div>
       {filteredHierarchy.map(node => (
-        <NodeView key={node.item.id} node={node} level={0} selectedStoryId={selectedStoryId} onSelectStory={onSelectStory} statusFilters={statusFilters} onUpdateStatus={onUpdateStatus} onUpdateTitle={onUpdateTitle} onCreateSubItem={onCreateSubItem} baseUrl={baseUrl} workItemLookup={workItemLookup} onLinkParent={onLinkParent} />
+        <NodeView key={node.item.id} node={node} level={0} selectedStoryId={selectedStoryId} onSelectStory={onSelectStory} statusFilters={statusFilters} onUpdateStatus={onUpdateStatus} onUpdateTitle={onUpdateTitle} onCreateSubItem={onCreateSubItem} baseUrl={baseUrl} workItemLookup={workItemLookup} onLinkParent={onLinkParent} expandAll={isExpandAll} />
       ))}
     </div>
   );
