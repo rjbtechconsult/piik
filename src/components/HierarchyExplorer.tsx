@@ -618,7 +618,6 @@ export function HierarchyExplorer({ hierarchy, isLoading, selectedStoryId, onSel
     <div className="flex flex-col gap-3 p-3 pt-4 custom-scrollbar">
       <div className="flex items-center justify-between px-1 mb-1">
         <div className="text-[10px] font-bold text-[var(--text-dim)] uppercase tracking-widest flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 2v20"/><path d="M10 7h6"/><path d="M10 11h6"/><path d="M10 15h6"/></svg>
           Work Items
         </div>
         <div className="flex items-center gap-1.5">

@@ -25,7 +25,7 @@ export const Hero: React.FC = () => {
         >
           <span className="badge">
             <span style={{ marginRight: '0.5rem', display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-glow)', boxShadow: '0 0 10px var(--primary-glow)' }}></span>
-            Piik v0.2.6 is now available
+            Piik v0.2.7 is now available
           </span>
         </motion.div>
 
