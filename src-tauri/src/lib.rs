@@ -236,7 +236,8 @@ async fn fetch_azure_hierarchy(organization: String, project: String, team: Stri
     }
 
     // 3. Fetch details for all IDs (ADO limits batch to 200 items)
-    let id_list: Vec<i64> = all_ids.into_iter().collect();
+    let mut id_list: Vec<i64> = all_ids.into_iter().collect();
+    id_list.sort_by(|a, b| b.cmp(a)); // Sort IDs descending for stability
     let mut all_work_items = Vec::new();
     
     for (i, chunk) in id_list.chunks(200).enumerate() {
@@ -308,6 +309,13 @@ async fn fetch_azure_hierarchy(organization: String, project: String, team: Stri
     }
 
     println!("Backend: Total work items enriched (including off-sprint parents): {}", all_work_items.len());
+
+    // Final sort before returning to ensure stability in the frontend
+    all_work_items.sort_by(|a, b| {
+        let id_a = a["id"].as_i64().unwrap_or(0);
+        let id_b = b["id"].as_i64().unwrap_or(0);
+        id_b.cmp(&id_a)
+    });
 
     Ok(serde_json::json!({
         "relations": items_data["workItemRelations"],
@@ -585,6 +593,42 @@ async fn update_azure_item_status(organization: String, project: String, token: 
         let err_body = res.text().await.unwrap_or_default();
         println!("Backend: Status update failed: {}", err_body);
         Err(format!("Failed to update status: {}", err_body))
+    }
+}
+
+#[tauri::command]
+async fn update_azure_item_title(organization: String, project: String, token: String, id: i64, title: String) -> Result<(), String> {
+    let org = organization.trim().trim_end_matches("/");
+    let proj = project.trim().trim_end_matches("/");
+    let base_url = get_base_url(org);
+    let url = format!("{}/{}/_apis/wit/workitems/{}?api-version=7.1", base_url, proj.replace(" ", "%20"), id);
+
+    let client = reqwest::Client::new();
+    let patch = serde_json::json!([
+        {
+            "op": "replace",
+            "path": "/fields/System.Title",
+            "value": title
+        }
+    ]);
+
+    println!("Backend: Updating item {} title to: {}", id, title);
+
+    let res = client.patch(&url)
+        .basic_auth("", Some(token))
+        .header("Content-Type", "application/json-patch+json")
+        .json(&patch)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if res.status().is_success() {
+        println!("Backend: Item {} title updated successfully", id);
+        Ok(())
+    } else {
+        let err_body = res.text().await.unwrap_or_default();
+        println!("Backend: Title update failed: {}", err_body);
+        Err(format!("Failed to update title: {}", err_body))
     }
 }
 
@@ -886,7 +930,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, update_azure_item_parent, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me, fetch_work_item_states, fetch_azure_epics, debug_azure_types])
+        .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, update_azure_item_title, update_azure_item_parent, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me, fetch_work_item_states, fetch_azure_epics, debug_azure_types])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

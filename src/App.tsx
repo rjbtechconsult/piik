@@ -660,6 +660,60 @@ function App() {
     }
   };
 
+  const handleUpdateTitle = async (id: number, newTitle: string) => {
+    // 1. Optimistic UI Update
+    const previousHierarchy = [...hierarchy];
+    const updateNodeTitle = (nodes: HierarchyNode[]): HierarchyNode[] => {
+      return nodes.map(node => {
+        if (node.item.id === id) {
+          return {
+            ...node,
+            item: {
+              ...node.item,
+              fields: {
+                ...node.item.fields,
+                "System.Title": newTitle
+              }
+            }
+          };
+        }
+        if (node.children.length > 0) {
+          return {
+            ...node,
+            children: updateNodeTitle(node.children)
+          };
+        }
+        return node;
+      });
+    };
+
+    setHierarchy(prev => updateNodeTitle(prev));
+
+    try {
+      const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
+      const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
+      let token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => "");
+      if (!token) token = (await getSetting("azure_pat")) || "";
+
+      if (!org || !project || !token) return;
+
+      await invoke("update_azure_item_title", {
+        organization: org,
+        project,
+        token,
+        id,
+        title: newTitle
+      });
+
+      // 2. Silent background refresh to sync other fields (ChangedDate, etc.)
+      fetchHierarchy(undefined, true);
+    } catch (err) {
+      console.error("Failed to update title, reverting optimistic change:", err);
+      setHierarchy(previousHierarchy);
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   const buildTree = (items: AzureWorkItem[], relations: any[]): HierarchyNode[] => {
     const itemMap = new Map<number, HierarchyNode>();
     items.forEach(item => {
@@ -682,10 +736,16 @@ function App() {
 
     const rootNodes: HierarchyNode[] = [];
     itemMap.forEach((node, id) => {
+      // Sort children by ID descending for visual stability
+      node.children.sort((a, b) => b.item.id - a.item.id);
+      
       if (!childIds.has(id)) {
         rootNodes.push(node);
       }
     });
+
+    // Sort root nodes by ID descending
+    rootNodes.sort((a, b) => b.item.id - a.item.id);
 
     return rootNodes;
   };
@@ -914,6 +974,7 @@ function App() {
             searchQuery={searchQuery}
             baseUrl={azureConfig.org && azureConfig.project ? `https://dev.azure.com/${azureConfig.org}/${azureConfig.project}/_workitems/edit/` : ""}
             onUpdateStatus={handleUpdateStatus}
+            onUpdateTitle={handleUpdateTitle}
             onCreateSubItem={(id: number, title: string, areaPath: string, iterationPath: string) => {
               setCreatingSubItemFor({ id, title, areaPath, iterationPath });
               setShowCreateModal(true);
