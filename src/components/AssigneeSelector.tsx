@@ -13,9 +13,10 @@ interface AssigneeSelectorProps {
   selectedAssignees: string[];
   onSelect: (uniqueNames: string[]) => void;
   isLoading?: boolean;
+  workloads?: Record<string, number>;
 }
 
-export function AssigneeSelector({ teamMembers, selectedAssignees, onSelect, isLoading }: AssigneeSelectorProps) {
+export function AssigneeSelector({ teamMembers, selectedAssignees, onSelect, isLoading, workloads = {} }: AssigneeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -45,7 +46,9 @@ export function AssigneeSelector({ teamMembers, selectedAssignees, onSelect, isL
     if (selectedAssignees.length === 0) return "All Assignees";
     if (selectedAssignees.length === 1) {
       const member = teamMembers.find(m => m.identity.uniqueName === selectedAssignees[0]);
-      return member?.identity.displayName || selectedAssignees[0];
+      const count = workloads[selectedAssignees[0]] || 0;
+      const name = member?.identity.displayName || selectedAssignees[0];
+      return count > 0 ? `${name} (${count})` : name;
     }
     return `${selectedAssignees.length} Selected`;
   };
@@ -181,6 +184,11 @@ export function AssigneeSelector({ teamMembers, selectedAssignees, onSelect, isL
                     <span className={`text-[11px] font-medium truncate ${selectedAssignees.includes(member.identity.uniqueName) ? 'text-[var(--accent-blue)]' : 'text-[var(--text-muted)]'}`}>
                       {member.identity.displayName}
                     </span>
+                    {workloads[member.identity.uniqueName] > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[var(--accent-blue)]/10 text-[var(--accent-blue)] text-[9px] font-bold border border-[var(--accent-blue)]/20 animate-in fade-in zoom-in duration-300">
+                        {workloads[member.identity.uniqueName]}
+                      </span>
+                    )}
                   </div>
                   {selectedAssignees.includes(member.identity.uniqueName) && (
                     <svg className="text-[var(--accent-blue)]" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>

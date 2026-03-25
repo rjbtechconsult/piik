@@ -130,6 +130,36 @@ function App() {
     initNotifications();
   }, []);
  
+  const workloads = useMemo(() => {
+    const counts: Record<string, number> = {};
+    
+    const countActiveItems = (nodes: HierarchyNode[]) => {
+      nodes.forEach(node => {
+        const assignedTo = node.item.fields["System.AssignedTo"];
+        const state = node.item.fields["System.State"];
+        const type = node.item.fields["System.WorkItemType"];
+        
+        // Count as "Active" if it's a Tasks or Bug in an active state
+        const isActiveState = ["Active", "Doing", "InProgress", "In-Progress"].includes(state);
+        const isLeafWorkItem = type === "Task" || type === "Bug";
+        
+        if (isActiveState && isLeafWorkItem && assignedTo) {
+          const uniqueName = typeof assignedTo === 'string' ? assignedTo : assignedTo.uniqueName;
+          if (uniqueName) {
+            counts[uniqueName] = (counts[uniqueName] || 0) + 1;
+          }
+        }
+        
+        if (node.children && node.children.length > 0) {
+          countActiveItems(node.children);
+        }
+      });
+    };
+    
+    countActiveItems(hierarchy);
+    return counts;
+  }, [hierarchy]);
+
   useEffect(() => {
     if (!selectedTeam || !selectedIteration) return;
  
@@ -799,7 +829,7 @@ function App() {
 
   return (
     <div className="h-[524px] w-[364px] flex items-center justify-center bg-transparent" data-theme={getEffectiveTheme()}>
-      <div className="h-[520px] w-[360px] flex flex-col bg-[var(--app-bg)] text-[var(--text-main)] select-none overflow-hidden rounded-[12px] border border-[var(--border-main)] relative">
+      <div className="h-[520px] w-[360px] flex flex-col bg-[var(--app-bg)] text-[var(--text-main)] overflow-hidden rounded-[12px] border border-[var(--border-main)] relative">
         <div className="shrink-0 bg-[var(--header-bg)] border-b border-[var(--border-subtle)] flex flex-col">
           <div className="flex items-center justify-between pr-3 py-1.5">
             {isSearchOpen ? (
@@ -922,6 +952,7 @@ function App() {
                     selectedAssignees={assigneeFilter}
                     onSelect={setAssigneeFilter}
                     isLoading={isLoading}
+                    workloads={workloads}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5 min-w-0">

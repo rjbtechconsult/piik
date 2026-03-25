@@ -255,7 +255,10 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                     <span className="px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/20 text-[var(--accent-blue)] text-[9px] font-black uppercase tracking-wider border border-[var(--accent-blue)]/30">
                       Story
                     </span>
-                    <span className="text-[11px] font-bold text-[var(--text-dim)] tracking-tight flex items-center gap-1.5">
+                    <span 
+                      className="text-[11px] font-bold text-[var(--text-dim)] tracking-tight flex items-center gap-1.5 select-text cursor-text"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       #{node.item.id}
                     </span>
                   </div>
@@ -318,6 +321,12 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                 </div>
 
                 <div className="flex flex-col items-end gap-2 shrink-0 pl-3">
+                  {node.children.length > 0 && (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--card-bg-subtle)] border border-[var(--border-subtle)]/50 text-[9px] text-[var(--text-dim)] font-black uppercase tracking-widest">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-60"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      {node.children.length} {node.children.length === 1 ? 'Task' : 'Tasks'}
+                    </div>
+                  )}
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all shrink-0">
                     <button onClick={handleCopyLink} className={`p-1 hover:bg-[var(--card-hover)] rounded transition-colors cursor-pointer ${copyFeedback ? 'text-green-400' : 'text-[var(--text-dim)] hover:text-[var(--text-main)]'}`} title="Copy direct link">
                       {copyFeedback ? <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
@@ -468,7 +477,10 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
           </div>
 
           <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <span className="text-[9px] font-mono text-[var(--text-dim)] flex items-center gap-1.5">
+            <span 
+              className="text-[9px] font-mono text-[var(--text-dim)] flex items-center gap-1.5 select-text cursor-text"
+              onClick={(e) => e.stopPropagation()}
+            >
               #{node.item.id}
             </span>
             <div className="relative" onMouseEnter={() => setShowStatusMenu(true)} onMouseLeave={() => setShowStatusMenu(false)}>
