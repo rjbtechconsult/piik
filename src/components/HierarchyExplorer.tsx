@@ -239,8 +239,22 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                   {resolvedParentEpic ? (
-                    <div className="text-[10px] text-[var(--text-dim)] italic mb-1 truncate max-w-full opacity-70" title={`Parent Epic: ${resolvedParentEpic}`}>
-                      {resolvedParentEpic}
+                    <div className="flex items-center gap-1.5 mb-1 group/parent min-w-0">
+                      <div className="text-[10px] text-[var(--text-dim)] italic truncate opacity-70" title={`Parent Epic: ${resolvedParentEpic}`}>
+                        {resolvedParentEpic}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLinkParent(node.item.id);
+                        }}
+                        className="p-1 hover:bg-[var(--card-hover)] rounded opacity-0 group-hover/parent:opacity-100 transition-all shrink-0 cursor-pointer"
+                        title="Change Parent Epic"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-dim)] hover:text-[var(--accent-blue)]">
+                          <path d="m7 16-4-4 4-4"/><path d="m17 8 4 4-4 4"/><path d="M3 12h18"/>
+                        </svg>
+                      </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 mb-1 overflow-hidden">

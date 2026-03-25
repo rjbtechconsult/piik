@@ -519,6 +519,8 @@ function App() {
   };
 
   const fetchEpicsForTeam = async (teamName: string) => {
+    setIsEpicsLoading(true);
+    setEpics([]);
     console.log(`App: fetchEpicsForTeam triggered for: "${teamName}"`);
     if (!teamName || teamName === "Global") {
       console.log("App: Fetching epics with Global scope (no area path filter)");
