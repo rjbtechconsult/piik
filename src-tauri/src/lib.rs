@@ -190,20 +190,48 @@ async fn fetch_azure_hierarchy(
     let mut items_data = serde_json::json!({ "workItems": [], "workItemRelations": [] });
 
     if let Some(ref id) = final_iteration_id {
-        // 2a. Get Work Items in that Iteration
+        // 2a. Get Work Items in that Iteration (with retries for reliability)
         let items_url = format!("{}/{}/{}/_apis/work/teamsettings/iterations/{}/workitems?api-version=7.0",
             base_url, proj_encoded, team_encoded, id);
         
         println!("Backend: Fetching iteration workitems from: {}", items_url);
 
-        let items_res = client.get(&items_url)
-            .basic_auth("", Some(token.clone()))
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
+        let mut attempts = 0;
+        let max_attempts = 3;
+        let mut last_err = String::new();
 
-        if items_res.status().is_success() {
-            items_data = items_res.json().await.map_err(|e| e.to_string())?;
+        while attempts < max_attempts {
+            attempts += 1;
+            let items_res = client.get(&items_url)
+                .basic_auth("", Some(token.clone()))
+                .send()
+                .await;
+
+            match items_res {
+                Ok(res) if res.status().is_success() => {
+                    items_data = res.json().await.map_err(|e| e.to_string())?;
+                    last_err.clear();
+                    break;
+                }
+                Ok(res) => {
+                    last_err = format!("HTTP {}", res.status());
+                    if attempts < max_attempts {
+                        println!("Backend: Iteration fetch failed ({}), retrying ({}/{})...", last_err, attempts, max_attempts);
+                        tokio::time::sleep(std::time::Duration::from_millis(500 * attempts)).await;
+                    }
+                }
+                Err(e) => {
+                    last_err = e.to_string();
+                    if attempts < max_attempts {
+                        println!("Backend: Iteration fetch error ({}), retrying ({}/{})...", last_err, attempts, max_attempts);
+                        tokio::time::sleep(std::time::Duration::from_millis(500 * attempts)).await;
+                    }
+                }
+            }
+        }
+
+        if !last_err.is_empty() {
+            return Err(format!("Failed to fetch iteration workitems after {} attempts: {}", max_attempts, last_err));
         }
     }
 

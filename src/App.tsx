@@ -545,7 +545,7 @@ function App() {
       }
     } catch (err: any) {
       console.error("Failed to fetch hierarchy:", err);
-      setError(err.toString());
+      if (!silent) setError(err.toString());
     } finally {
       if (!silent) setIsLoading(false);
     }
