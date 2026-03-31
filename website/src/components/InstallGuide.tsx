@@ -70,12 +70,33 @@ export const InstallGuide: React.FC = () => {
       title: '2. Remove Quarantine',
       description: (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span>macOS might block the app since it's an unsigned release. Open Terminal and run:</span>
+          <div style={{ 
+            background: 'rgba(239, 68, 68, 0.1)', 
+            border: '1px solid rgba(239, 68, 68, 0.2)', 
+            padding: '0.75rem', 
+            borderRadius: '8px', 
+            marginBottom: '0.75rem',
+            fontSize: '0.85rem',
+            color: '#f87171'
+          }}>
+            <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+              <img 
+                src="/gatekeeper.png" 
+                alt="macOS Damaged App Dialog" 
+                style={{ 
+                  maxWidth: '100%', 
+                  borderRadius: '12px', 
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(255,255,255,0.1)' 
+                }} 
+              />
+            </div>
+            <strong>Important:</strong> If you see the message above (<strong>"Piik is damaged and can't be opened"</strong>), don't worry! This is the default macOS warning for unsigned apps. To fix it, run:
+          </div>
           <div className="code-container-wrapper" style={{ 
             background: 'rgba(0,0,0,0.3)', 
             padding: '0.5rem 1rem', 
             borderRadius: '8px', 
-            marginTop: '0.75rem', 
             border: '1px solid rgba(255,255,255,0.1)',
             display: 'flex',
             alignItems: 'center',
