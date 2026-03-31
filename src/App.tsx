@@ -6,6 +6,7 @@ import { TeamSelector } from "./components/TeamSelector";
 import { IterationSelector } from "./components/IterationSelector";
 import { HierarchyExplorer } from "./components/HierarchyExplorer";
 import { CreateItemModal } from "./components/CreateItemModal";
+import { Dashboard } from "./components/Dashboard";
 import { LinkParentModal } from "./components/LinkParentModal";
 import { AssigneeSelector } from "./components/AssigneeSelector";
 import { EpicFeatureSelector } from "./components/EpicFeatureSelector";
@@ -91,7 +92,7 @@ function App() {
   const [iterations, setIterations] = useState<any[]>([]);
   const [selectedIteration, setSelectedIteration] = useState<any | null>(null);
   const [selectedStoryId, setSelectedStoryId] = useState<number | null>(null);
-  const [statusFilters, setStatusFilters] = useState<string[]>(["New", "Active", "To Do", "Doing", "InProgress", "In-Progress", "Open", "Approved", "Committed"]);
+  const [statusFilters, setStatusFilters] = useState<string[]>(["New", "Active", "To Do", "Doing", "InProgress", "In-Progress", "Open", "Approved", "Committed", "Removed"]);
   const [hierarchyData, setHierarchyData] = useState<{ nodes: HierarchyNode[], items: any[] }>({ nodes: [], items: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [teamSettings, setTeamSettings] = useState<{ defaultAreaPath: string | null }>({ defaultAreaPath: null });
@@ -109,8 +110,10 @@ function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [azureConfig, setAzureConfig] = useState<{ org: string; project: string }>({ org: "", project: "" });
+  const [azurePat, setAzurePat] = useState<string>("");
   const [epics, setEpics] = useState<any[]>([]);
   const [isEpicsLoading, setIsEpicsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"board" | "dashboard">("board");
 
   const lastWorkItemsRef = useRef<Record<number, string | null>>({});
   const appStartTimeRef = useRef<Date>(new Date());
@@ -204,6 +207,7 @@ function App() {
         setAzureConfig({ org, project });
       }
       if (org && token) {
+        if (typeof token === 'string') setAzurePat(token);
         const iden: any = await invoke("identify_me", { organization: org, token });
         setCurrentUser(iden);
       }
@@ -235,14 +239,14 @@ function App() {
     const isOwnedByMe = (item: any): boolean => {
       if (!item || !item.fields) return false;
       const assignedTo = item.fields["System.AssignedTo"];
-      
+
       const isMe = assignedTo && currentUser && (
         assignedTo.uniqueName === currentUser.uniqueName ||
         assignedTo.id === currentUser.id ||
         assignedTo.displayName === currentUser.displayName ||
         (assignedTo.uniqueName && currentUser.uniqueName && assignedTo.uniqueName.toLowerCase() === currentUser.uniqueName.toLowerCase())
       );
-      
+
       if (isMe) return true;
 
       // Recursive check for parent ownership
@@ -300,32 +304,74 @@ function App() {
   };
 
   useEffect(() => {
-    if (selectedTeam) {
-      fetchIterations();
-      fetchTeamMembers();
-      fetchTeamSettings();
-      fetchEpicsForTeam(selectedTeam);
-      setSelectedStoryId(null);
-    } else {
-      setIterations([]);
-      setSelectedIteration(null);
-      setSelectedStoryId(null);
-      setTeamSettings({ defaultAreaPath: null });
+    let activeSyncId = 0;
+
+    const syncTeamData = async () => {
+      if (!selectedTeam) {
+        setIterations([]);
+        setSelectedIteration(null);
+        setSelectedStoryId(null);
+        setTeamSettings({ defaultAreaPath: null });
+        setEpics([]);
+        setHierarchyData({ nodes: [], items: [] });
+        setTeamMembers([]);
+        return;
+      }
+
+      const syncId = ++activeSyncId;
+      setIsLoading(true);
+      setError(null);
+      // Clear previous team data MUST happen together with isLoading=true
+      setHierarchyData({ nodes: [], items: [] });
+      setTeamMembers([]);
       setEpics([]);
-    }
+      setSelectedStoryId(null);
+      setSelectedIteration(null);
+
+      try {
+        // 1. Fetch settings (Area Path) first as it's a critical dependency for hierarchy
+        const settings = await fetchTeamSettings(selectedTeam, true);
+        if (syncId !== activeSyncId) return;
+
+        // 2. Fetch Members and Iterations in parallel if possible, but let's keep it sequential for predictability
+        const members = await fetchTeamMembers(true);
+        if (syncId !== activeSyncId) return;
+
+        const itData = await fetchIterations(true);
+        if (syncId !== activeSyncId) return;
+
+        // 3. Fetch Epics
+        await fetchEpicsForTeam(selectedTeam, true);
+        if (syncId !== activeSyncId) return;
+
+        // 4. Finally fetch Hierarchy with EXPLICIT overrides to avoid state race conditions
+        const finalItId = itData && itData.value ? (itData.value.find((it: any) => it.attributes?.timeframe === "current")?.id || itData.value[itData.value.length - 1]?.id) : null;
+        await fetchHierarchy(finalItId, true, settings?.path, members);
+      } catch (err: any) {
+        if (syncId === activeSyncId) {
+          console.error("Atomic sync failed:", err);
+          setError(err.toString());
+        }
+      } finally {
+        if (syncId === activeSyncId) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    syncTeamData();
   }, [selectedTeam]);
 
+  // Handle iteration changes separately but keep it simple
   useEffect(() => {
-    // Only fetch hierarchy if we have target team AND we've loaded team settings (for area path fallback)
-    // and we have either an iteration or the area path ready.
-    if (selectedTeam && teamSettings.defaultAreaPath) {
-      fetchHierarchy();
+    if (selectedTeam && selectedIteration) {
+      fetchHierarchy(selectedIteration.id);
       setSelectedStoryId(null);
     }
-  }, [selectedTeam, selectedIteration, teamSettings.defaultAreaPath]);
+  }, [selectedIteration]);
 
-  const fetchTeams = async () => {
-    setIsLoading(true);
+  const fetchTeams = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
@@ -360,12 +406,12 @@ function App() {
       console.error("Failed to fetch teams:", err);
       setError(err.toString());
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
-  const fetchIterations = async () => {
-    setIsLoading(true);
+  const fetchIterations = async (silent = false): Promise<any> => {
+    if (!silent) setIsLoading(true);
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
@@ -379,23 +425,28 @@ function App() {
         token
       });
 
-      if (data.value) {
+      if (data.value && data.value.length > 0) {
         setIterations(data.value);
         const current = data.value.find((it: any) => it.attributes?.timeframe === "current");
         if (current) {
           setSelectedIteration(current);
-        } else if (data.value.length > 0) {
+        } else {
           setSelectedIteration(data.value[data.value.length - 1]);
         }
+      } else {
+        setIterations([]);
+        setSelectedIteration(null);
       }
+      return data;
     } catch (err) {
       console.error("Failed to fetch iterations:", err);
+      return null;
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
-  const fetchHierarchy = async (iterationId?: string, silent = false) => {
+  const fetchHierarchy = async (iterationId?: string, silent = false, overrideAreaPath?: string, overrideMembers?: any[]) => {
     if (!selectedTeam) return;
     if (!silent) {
       setIsLoading(true);
@@ -413,7 +464,15 @@ function App() {
         return;
       }
 
+      if (typeof token === 'string' && !azurePat) setAzurePat(token);
+      if (!azureConfig.org) setAzureConfig({ org, project });
+
       const itId = iterationId || selectedIteration?.id;
+
+      const membersToUse = overrideMembers || teamMembers;
+      const memberNames = membersToUse.map((m: any) => m.identity?.uniqueName || m.uniqueName).filter(Boolean);
+
+      const areaPathToUse = overrideAreaPath || teamSettings.defaultAreaPath || null;
 
       const hData: any = await invoke("fetch_azure_hierarchy", {
         organization: org,
@@ -421,8 +480,9 @@ function App() {
         team: selectedTeam,
         token,
         iterationId: itId || null,
-        areaPath: teamSettings.defaultAreaPath || null,
-        recursive: true
+        areaPath: areaPathToUse,
+        recursive: true,
+        teamMembers: memberNames.length > 0 ? memberNames : null
       });
 
       if (hData.workItems && hData.relations) {
@@ -487,11 +547,12 @@ function App() {
       console.error("Failed to fetch hierarchy:", err);
       setError(err.toString());
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
-  const fetchTeamSettings = async (teamName?: string) => {
+  const fetchTeamSettings = async (teamName?: string, silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
@@ -527,40 +588,40 @@ function App() {
         };
       }
       return null;
-    } catch (err) {
-      console.error("App: Failed to fetch team settings:", err);
-      return null;
+    } finally {
+      if (!silent) setIsLoading(false);
     }
   };
 
-  const fetchEpicsForTeam = async (teamName: string) => {
-    setIsEpicsLoading(true);
+  const fetchEpicsForTeam = async (teamName: string, silent = false) => {
+    if (!silent) setIsEpicsLoading(true);
     setEpics([]);
     console.log(`App: fetchEpicsForTeam triggered for: "${teamName}"`);
     if (!teamName || teamName === "Global") {
       console.log("App: Fetching epics with Global scope (no area path filter)");
-      await fetchEpics(undefined);
+      await fetchEpics(undefined, undefined, true, silent);
       return;
     }
-    const settings = await fetchTeamSettings(teamName);
+    const settings = await fetchTeamSettings(teamName, silent);
     if (settings && settings.path) {
       console.log(`App: Team "${teamName}" mapped to area path:`, settings.path, "Recursive:", settings.recursive);
-      await fetchEpics(settings.path, undefined, settings.recursive);
+      await fetchEpics(settings.path, undefined, settings.recursive, silent);
     } else {
       console.warn(`App: No area path found for team "${teamName}", falling back to project scope`);
-      await fetchEpics(undefined);
+      await fetchEpics(undefined, undefined, true, silent);
     }
   };
 
-  const fetchTeamMembers = async () => {
-    if (!selectedTeam) return;
+  const fetchTeamMembers = async (silent = false): Promise<any[]> => {
+    if (!selectedTeam) return [];
+    if (!silent) setIsLoading(true);
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
       let token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => "");
       if (!token) token = (await getSetting("azure_pat")) || "";
 
-      if (!org || !project || !token) return;
+      if (!org || !project || !token) return [];
 
       const data: any = await invoke("fetch_team_members", {
         organization: org,
@@ -571,14 +632,19 @@ function App() {
 
       if (data.value) {
         setTeamMembers(data.value);
+        return data.value;
       }
+      return [];
     } catch (err) {
       console.error("Failed to fetch team members:", err);
+      return [];
+    } finally {
+      if (!silent) setIsLoading(false);
     }
   };
 
-  const fetchEpics = async (areaPath?: string, configOverride?: { org: string; project: string }, recursive: boolean = true) => {
-    setIsEpicsLoading(true);
+  const fetchEpics = async (areaPath?: string, configOverride?: { org: string; project: string }, recursive: boolean = true, silent = false) => {
+    if (!silent) setIsEpicsLoading(true);
     setEpics([]); // Clear previous results immediately
     try {
       const org = configOverride?.org || azureConfig.org || await getSetting("azure_org") || localStorage.getItem("azure_org");
@@ -622,7 +688,7 @@ function App() {
     } catch (err) {
       console.error("Failed to fetch epics:", err);
     } finally {
-      setIsEpicsLoading(false);
+      if (!silent) setIsEpicsLoading(false);
     }
   };
 
@@ -680,20 +746,30 @@ function App() {
       fetchHierarchy();
     } catch (err: any) {
       console.error("Failed to create work item:", err);
-      setError(err.toString());
+      // Only set global error if modal isn't showing (fallback)
+      // setError(err.toString()); 
       throw err;
     }
   };
 
   const handleUpdateStatus = async (id: number, newStatus: string) => {
     try {
-      const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
-      const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
-      const token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => (getSetting("azure_pat") || ""));
+      const org = azureConfig.org || await getSetting("azure_org") || localStorage.getItem("azure_org") || "";
+      const project = azureConfig.project || await getSetting("azure_project") || localStorage.getItem("azure_project") || "";
+      const token = azurePat || await invoke<string>("get_token", { key: "azure_pat" }).catch(() => (getSetting("azure_pat") || ""));
 
-      if (!org || !project || !token) return;
+      console.log(`App: Updating item ${id} to status ${newStatus}`);
+      if (!org || !project || !token) {
+        console.warn(`App: Missing Azure settings (org:${!!org}/proj:${!!project}/token:${!!token}), cannot update status`);
+        return;
+      }
 
-      await invoke("update_azure_work_item_status", { organization: org, project, id, status: newStatus, token });
+      // Update state if not already set
+      if (!azureConfig.org) setAzureConfig({ org, project });
+      if (!azurePat && typeof token === 'string') setAzurePat(token);
+
+      await invoke("update_azure_item_status", { organization: org, project, id, status: newStatus, token });
+      console.log(`App: Item ${id} status updated successfully in Azure`);
 
       // Update local state immediately for responsiveness
       const updateNodeStatus = (nodes: HierarchyNode[]): HierarchyNode[] => {
@@ -714,7 +790,19 @@ function App() {
         });
       };
 
-      setHierarchyData(prev => ({ ...prev, nodes: updateNodeStatus(prev.nodes) }));
+      setHierarchyData(prev => {
+        const newNodes = updateNodeStatus(prev.nodes);
+        const newItems = prev.items.map(item => {
+          if (item.id === id) {
+            return {
+              ...item,
+              fields: { ...item.fields, "System.State": newStatus }
+            };
+          }
+          return item;
+        });
+        return { ...prev, nodes: newNodes, items: newItems };
+      });
     } catch (err) {
       console.error("Failed to update status:", err);
       setError(err instanceof Error ? err.message : String(err));
@@ -723,13 +811,13 @@ function App() {
 
   const handleUpdateTitle = async (id: number, newTitle: string) => {
     try {
-      const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
-      const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
-      const token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => (getSetting("azure_pat") || ""));
+      const org = azureConfig.org || await getSetting("azure_org") || localStorage.getItem("azure_org") || "";
+      const project = azureConfig.project || await getSetting("azure_project") || localStorage.getItem("azure_project") || "";
+      const token = azurePat || await invoke<string>("get_token", { key: "azure_pat" }).catch(() => (getSetting("azure_pat") || ""));
 
       if (!org || !project || !token) return;
 
-      await invoke("update_azure_work_item_title", { organization: org, project, id, title: newTitle, token });
+      await invoke("update_azure_item_title", { organization: org, project, id, title: newTitle, token });
 
       // Update local state immediately
       const updateNodeTitle = (nodes: HierarchyNode[]): HierarchyNode[] => {
@@ -952,6 +1040,30 @@ function App() {
           )}
         </div>
 
+        {/* Tab Bar */}
+        {selectedTeam && !isSearchOpen && (
+          <div className="shrink-0 flex border-b border-[var(--border-subtle)] bg-[var(--header-bg)]">
+            <button
+              onClick={() => setActiveTab("board")}
+              className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === "board"
+                  ? "text-[var(--accent-blue)] border-b-2 border-[var(--accent-blue)]"
+                  : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
+                }`}
+            >
+              Board
+            </button>
+            <button
+              onClick={() => setActiveTab("dashboard")}
+              className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === "dashboard"
+                  ? "text-[var(--accent-blue)] border-b-2 border-[var(--accent-blue)]"
+                  : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
+                }`}
+            >
+              Dashboard
+            </button>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto min-h-0 bg-[var(--app-bg)] custom-scrollbar">
           {isLoading && (
             <div className="flex items-center justify-center py-12">
@@ -1009,7 +1121,7 @@ function App() {
             </div>
           )}
 
-          {!isLoading && !error && selectedTeam && (
+          {!isLoading && !error && selectedTeam && activeTab === "board" && (
             <HierarchyExplorer
               hierarchy={hierarchyData.nodes}
               isLoading={isLoading}
@@ -1039,6 +1151,15 @@ function App() {
               allWorkItems={hierarchyData.items}
             />
           )}
+
+          {!isLoading && !error && selectedTeam && activeTab === "dashboard" && (
+            <Dashboard
+              workItems={hierarchyData.items}
+              teamMembers={teamMembers}
+              isLoading={isLoading}
+              teamName={selectedTeam}
+            />
+          )}
         </div>
 
         {showCreateModal && (
@@ -1056,7 +1177,6 @@ function App() {
             teams={teams}
             selectedTeam={selectedTeam || undefined}
             onEpicTeamChange={fetchEpicsForTeam}
-            availableStatuses={availableStatuses}
           />
         )}
 

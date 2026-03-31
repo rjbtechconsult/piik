@@ -142,7 +142,16 @@ async fn fetch_azure_team_settings(organization: String, project: String, team: 
 }
 
 #[tauri::command]
-async fn fetch_azure_hierarchy(organization: String, project: String, team: String, token: String, iteration_id: Option<String>, area_path: Option<String>, recursive: Option<bool>) -> Result<serde_json::Value, String> {
+async fn fetch_azure_hierarchy(
+    organization: String,
+    project: String,
+    team: String,
+    token: String,
+    iteration_id: Option<String>,
+    area_path: Option<String>,
+    recursive: Option<bool>,
+    team_members: Option<Vec<String>>,
+) -> Result<serde_json::Value, String> {
     let org = organization.trim().trim_end_matches("/");
     let proj = project.trim().trim_end_matches("/");
     let team_name = team.trim();
@@ -208,9 +217,24 @@ async fn fetch_azure_hierarchy(organization: String, project: String, team: Stri
             
             let wiql_url = format!("{}/{}/_apis/wit/wiql?api-version=7.1", base_url, proj_encoded);
             let op = if recursive.unwrap_or(true) { "UNDER" } else { "=" };
+            
+            // Build the team members filter if provided
+            let members_filter = if let Some(members) = team_members {
+                if !members.is_empty() {
+                    let quoted_members: Vec<String> = members.iter()
+                        .map(|m| format!("'{}'", m.replace("'", "''")))
+                        .collect();
+                    format!(" AND [System.AssignedTo] IN ({})", quoted_members.join(","))
+                } else {
+                    "".to_string()
+                }
+            } else {
+                "".to_string()
+            };
+
             let query_str = format!(
-                "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{}' AND [System.AreaPath] {} '{}' AND [System.WorkItemType] IN ('User Story', 'Story', 'Task', 'Bug', 'Product Backlog Item', 'Requirement', 'Issue') AND [System.State] NOT IN ('Closed', 'Removed')",
-                proj.replace("'", "''"), op, path.replace("'", "''")
+                "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{}' AND [System.AreaPath] {} '{}'{} AND [System.WorkItemType] IN ('User Story', 'Story', 'Task', 'Bug', 'Product Backlog Item', 'Requirement', 'Issue') AND [System.State] NOT IN ('Closed', 'Removed')",
+                proj.replace("'", "''"), op, path.replace("'", "''"), members_filter
             );
 
             let query = serde_json::json!({ "query": query_str });
@@ -511,7 +535,7 @@ async fn create_azure_work_item(
         }
     }
 
-    if let Some(st) = status {
+    if let Some(ref st) = status {
         if !st.trim().is_empty() {
             patch.push(serde_json::json!({
                 "op": "add",
@@ -535,7 +559,7 @@ async fn create_azure_work_item(
     }
 
     let res = client.post(&url)
-        .basic_auth("", Some(token))
+        .basic_auth("", Some(token.clone()))
         .header("Content-Type", "application/json-patch+json")
         .json(&patch)
         .send()
@@ -547,6 +571,57 @@ async fn create_azure_work_item(
         Ok(data)
     } else {
         let err_body = res.text().await.unwrap_or_default();
+        
+        // If it failed because of the State field, try creating without status and then updating
+        if err_body.contains("System.State") || err_body.contains("supported values") {
+            println!("Backend: Creation failed with State error. Retrying without status...");
+            
+            // 1. Remove status from patch
+            let mut retry_patch: Vec<serde_json::Value> = patch.clone();
+            retry_patch.retain(|p| {
+                if let Some(path) = p.get("path") {
+                    path.as_str() != Some("/fields/System.State")
+                } else {
+                    true
+                }
+            });
+            
+            let retry_res = client.post(&url)
+                .basic_auth("", Some(token.clone()))
+                .header("Content-Type", "application/json-patch+json")
+                .json(&retry_patch)
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+                
+            if retry_res.status().is_success() {
+                let data: serde_json::Value = retry_res.json().await.map_err(|e| e.to_string())?;
+                let id = data.get("id").and_then(|v| v.as_i64());
+                
+                if let (Some(id), Some(st)) = (id, status.as_ref()) {
+                    println!("Backend: Item {} created. Now updating status to {}...", id, st);
+                    let update_url = format!("{}/{}/_apis/wit/workitems/{}?api-version=7.1", 
+                        base_url, proj.replace(" ", "%20"), id);
+                        
+                    let update_patch = vec![
+                        serde_json::json!({
+                            "op": "add",
+                            "path": "/fields/System.State",
+                            "value": st
+                        })
+                    ];
+                    
+                    let _ = client.patch(&update_url)
+                        .basic_auth("", Some(token))
+                        .header("Content-Type", "application/json-patch+json")
+                        .json(&update_patch)
+                        .send()
+                        .await;
+                }
+                return Ok(data);
+            }
+        }
+        
         Err(format!("Failed to create work item: {}", err_body))
     }
 }

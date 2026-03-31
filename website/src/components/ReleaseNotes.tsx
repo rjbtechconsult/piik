@@ -13,7 +13,7 @@ export const ReleaseNotes: React.FC = () => {
            transition={{ duration: 0.5 }}
            style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
-          <span className="badge">v0.2.9 Update</span>
+          <span className="badge">v0.3.0 Update</span>
           <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Smart Hierarchy & Inherited Ownership</h2>
           <p style={{ margin: '0 auto', maxWidth: '600px' }}>
             Unlocking Azure DevOps for all teams with Board-first hierarchy fallbacks and managerial "Inherited Ownership" tracking.

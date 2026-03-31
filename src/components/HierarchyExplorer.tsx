@@ -230,7 +230,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
             onSelectStory(isSelected ? null : node.item.id);
             if (hasChildren) setIsExpanded(!isExpanded);
           }}
-          className={`relative flex flex-col p-4 bg-[var(--card-bg)] border rounded-xl transition-all cursor-pointer group ${isSelected ? 'border-[var(--accent-blue)] ring-1 ring-[var(--accent-blue)]/30 shadow-lg shadow-blue-500/5' : 'border-[var(--border-main)] hover:border-[var(--accent-blue)]/50'}`}
+          className={`relative flex flex-col p-4 bg-[var(--card-bg)] border rounded-xl transition-all cursor-pointer group ${isSelected ? 'border-[var(--accent-blue)] ring-1 ring-[var(--accent-blue)]/30 shadow-lg shadow-blue-500/5' : 'border-[var(--border-main)] hover:border-[var(--accent-blue)]/50'} ${stateLower === 'removed' ? 'opacity-40 grayscale-[0.5]' : ''}`}
         >
           <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full transition-colors ${isSelected ? 'bg-[var(--accent-blue)]' : isActive ? 'bg-[var(--accent-blue)]/40' : 'bg-[var(--border-main)]'}`} />
 
@@ -382,7 +382,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                     {showStatusMenu && (
                       <div className="absolute top-[calc(100%-4px)] left-0 pt-1 z-50">
                         <div className="bg-[var(--app-bg-solid)] border border-[var(--border-main)] rounded-lg shadow-2xl py-1 min-w-[100px] backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-200">
-                          {STATUS_OPTIONS.map(s => (
+                          {allowedStates.map(s => (
                             <button key={s} onClick={async (e) => { e.stopPropagation(); setIsUpdating(true); setShowStatusMenu(false); try { await onUpdateStatus(node.item.id, s); } finally { setIsUpdating(false); } }} className={`w-full text-left px-3 py-1.5 text-[10px] hover:bg-[var(--card-hover)] transition-colors ${state === s ? 'text-[var(--accent-blue)] font-bold bg-[var(--accent-blue)]/5' : 'text-[var(--text-muted)]'}`}>
                               {s}
                             </button>
@@ -430,7 +430,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
     <div className={`flex flex-col ${level > 0 ? 'mb-1' : 'mb-3'}`}>
       <div
         onClick={() => hasChildren && setIsExpanded(!isExpanded)}
-        className={`flex items-start gap-2 p-2 rounded-lg hover:bg-[var(--card-hover)] transition-all group border border-transparent hover:border-[var(--border-subtle)] ${hasChildren ? 'cursor-pointer' : ''}`}
+        className={`flex items-start gap-2 p-2 rounded-lg hover:bg-[var(--card-hover)] transition-all group border border-transparent hover:border-[var(--border-subtle)] ${hasChildren ? 'cursor-pointer' : ''} ${state.toLowerCase() === 'removed' ? 'opacity-40 grayscale-[0.5]' : ''}`}
       >
         <div className="mt-1 flex items-center justify-center w-4 h-4 shrink-0 transition-colors">
           {hasChildren ? (

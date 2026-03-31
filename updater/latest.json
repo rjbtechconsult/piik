@@ -1,15 +1,15 @@
 {
-  "version": "v0.2.9",
+  "version": "v0.3.0",
   "notes": "Smart hierarchy falls back for Board-first teams and inherited ownership tracking.",
-  "pub_date": "2026-03-31T01:50:00.000Z",
+  "pub_date": "2026-03-31T10:45:00.000Z",
   "platforms": {
     "darwin-x86_64": {
-      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.2.9",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.9/Piik.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.0",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.0/Piik.dmg"
     },
     "darwin-aarch64": {
-      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.2.9",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.9/Piik.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.0",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.0/Piik.dmg"
     }
   }
 }

@@ -19,7 +19,7 @@ interface CreateItemModalProps {
   epics?: any[];
   teams?: any[];
   selectedTeam?: string;
-  onEpicTeamChange?: (teamName: string) => void;
+  onEpicTeamChange?: (teamName: string, silent?: boolean) => Promise<void>;
 }
 
 export function CreateItemModal({ 
@@ -33,7 +33,6 @@ export function CreateItemModal({
   teams = [],
   selectedTeam,
   onEpicTeamChange,
-  availableStatuses = ["New", "Active", "To Do", "Doing", "InProgress", "In-Progress", "Open", "Approved", "Committed"]
 }: CreateItemModalProps) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState(parentItem ? "Task" : "User Story");
@@ -44,6 +43,7 @@ export function CreateItemModal({
   const [epicSearch, setEpicSearch] = useState("");
   const [showEpicDropdown, setShowEpicDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   // Filter epics based on search query
   const filteredEpics = epics.filter(epic => {
@@ -59,14 +59,16 @@ export function CreateItemModal({
     e.preventDefault();
     if (!title.trim() || isSubmitting) return;
 
+    setLocalError(null);
     setIsSubmitting(true);
     try {
       // Use parentItem.id if it's a sub-item, otherwise use selectedParentEpic if it's a Story
       const effectiveParentId = parentItem?.id || (selectedParentEpic ? parseInt(selectedParentEpic) : undefined);
       await onSave(title, type, assignee, effectiveParentId, parentItem?.areaPath, status);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create item:", error);
+      setLocalError(error.toString());
     } finally {
       setIsSubmitting(false);
     }
@@ -273,7 +275,7 @@ export function CreateItemModal({
                   onChange={(e) => setStatus(e.target.value)}
                   className="w-full bg-white/5 border border-[var(--border-main)] rounded-xl px-3 py-2.5 text-[12px] text-[var(--text-main)] focus:outline-none focus:border-[var(--accent-blue)]/50 appearance-none transition-all cursor-pointer"
                 >
-                  {availableStatuses.map((s) => (
+                  {["Active", "New"].map((s) => (
                     <option key={s} value={s} className="bg-[var(--app-bg-solid)]">
                       {s}
                     </option>
@@ -281,6 +283,17 @@ export function CreateItemModal({
                 </select>
               </div>
             </div>
+
+            {localError && (
+              <div className="mx-1 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-2 animate-in fade-in slide-in-from-top-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff453a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div className="text-[10px] text-red-400 font-medium leading-tight">
+                  {localError.includes("supported values") 
+                    ? "This status is not supported for this work item type. Try 'Default' or another status."
+                    : localError.replace("Error: ", "")}
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"
