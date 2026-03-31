@@ -79,19 +79,7 @@ export const InstallGuide: React.FC = () => {
             fontSize: '0.85rem',
             color: '#f87171'
           }}>
-            <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
-              <img 
-                src={`${import.meta.env.BASE_URL}gatekeeper.png`} 
-                alt="macOS Damaged App Dialog" 
-                style={{ 
-                  maxWidth: '100%', 
-                  borderRadius: '12px', 
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                  border: '1px solid rgba(255,255,255,0.1)' 
-                }} 
-              />
-            </div>
-            <strong>Important:</strong> If you see the message above (<strong>"Piik is damaged and can't be opened"</strong>), don't worry! This is the default macOS warning for unsigned apps. To fix it, run:
+            <strong>Important:</strong> If you see a message saying <strong>"Piik is damaged and can't be opened"</strong>, don't worry! This is the default macOS warning for unsigned apps. To fix it, run:
           </div>
           <div className="code-container-wrapper" style={{ 
             background: 'rgba(0,0,0,0.3)', 
