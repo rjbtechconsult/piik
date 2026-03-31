@@ -142,7 +142,7 @@ async fn fetch_azure_team_settings(organization: String, project: String, team: 
 }
 
 #[tauri::command]
-async fn fetch_azure_hierarchy(organization: String, project: String, team: String, token: String, iteration_id: Option<String>) -> Result<serde_json::Value, String> {
+async fn fetch_azure_hierarchy(organization: String, project: String, team: String, token: String, iteration_id: Option<String>, area_path: Option<String>, recursive: Option<bool>) -> Result<serde_json::Value, String> {
     let org = organization.trim().trim_end_matches("/");
     let proj = project.trim().trim_end_matches("/");
     let team_name = team.trim();
@@ -152,64 +152,87 @@ async fn fetch_azure_hierarchy(organization: String, project: String, team: Stri
     let client = reqwest::Client::new();
     
     // 1. Get Iteration ID (use provided or fetch current)
-    let final_iteration_id = if let Some(id) = iteration_id {
-        id
+    let mut final_iteration_id = if let Some(id) = iteration_id {
+        if id.is_empty() || id == "null" { None } else { Some(id) }
     } else {
+        None
+    };
+
+    if final_iteration_id.is_none() {
         let iteration_url = format!("{}/{}/{}/_apis/work/teamsettings/iterations?$timeframe=current&api-version=7.0", 
             base_url, proj_encoded, team_encoded);
         
         let iter_res = client.get(&iteration_url)
             .basic_auth("", Some(token.clone()))
             .send()
+            .await;
+
+        if let Ok(res) = iter_res {
+            if res.status().is_success() {
+                if let Ok(iter_data) = res.json::<serde_json::Value>().await {
+                    if let Some(id) = iter_data["value"][0]["id"].as_str() {
+                        final_iteration_id = Some(id.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    let mut items_data = serde_json::json!({ "workItems": [], "workItemRelations": [] });
+
+    if let Some(ref id) = final_iteration_id {
+        // 2a. Get Work Items in that Iteration
+        let items_url = format!("{}/{}/{}/_apis/work/teamsettings/iterations/{}/workitems?api-version=7.0",
+            base_url, proj_encoded, team_encoded, id);
+        
+        println!("Backend: Fetching iteration workitems from: {}", items_url);
+
+        let items_res = client.get(&items_url)
+            .basic_auth("", Some(token.clone()))
+            .send()
             .await
             .map_err(|e| e.to_string())?;
 
-        let iter_status = iter_res.status();
-        let iter_text = iter_res.text().await.map_err(|e| e.to_string())?;
-        
-        if !iter_status.is_success() {
-            println!("DIAGNOSTIC: Failed to fetch iterations in fetch_azure_hierarchy. Status: {}", iter_status);
-            println!("DIAGNOSTIC: Body: {}", iter_text);
-            return Err(format!("Failed to fetch iterations: {} - {}", iter_status, iter_text));
+        if items_res.status().is_success() {
+            items_data = items_res.json().await.map_err(|e| e.to_string())?;
         }
-
-        let iter_data: serde_json::Value = serde_json::from_str(&iter_text).map_err(|e| {
-            println!("DIAGNOSTIC: Failed to decode JSON from success response in fetch_azure_hierarchy (iteration).");
-            println!("DIAGNOSTIC: Body: {}", iter_text);
-            e.to_string()
-        })?;
-
-        iter_data["value"][0]["id"].as_str()
-            .ok_or_else(|| "No current sprint found for this team.")?.to_string()
-    };
-
-    // 2. Get Work Items in that Iteration
-    let items_url = format!("{}/{}/{}/_apis/work/teamsettings/iterations/{}/workitems?api-version=7.0",
-        base_url, proj_encoded, team_encoded, final_iteration_id);
-    
-    println!("Backend: Fetching iteration workitems from: {}", items_url);
-
-    let items_res = client.get(&items_url)
-        .basic_auth("", Some(token.clone()))
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let items_status = items_res.status();
-    let items_text = items_res.text().await.map_err(|e| e.to_string())?;
-
-    if !items_status.is_success() {
-        println!("DIAGNOSTIC: Failed to fetch items in fetch_azure_hierarchy. Status: {}", items_status);
-        println!("DIAGNOSTIC: Body: {}", items_text);
-        return Err(format!("Failed to fetch items: {} - {}", items_status, items_text));
     }
 
-    let items_data: serde_json::Value = serde_json::from_str(&items_text).map_err(|e| {
-        println!("DIAGNOSTIC: Failed to decode JSON from items response in fetch_azure_hierarchy.");
-        println!("DIAGNOSTIC: Body: {}", items_text);
-        e.to_string()
-    })?;
-    println!("Backend: Iteration data received. Keys: {:?}", items_data.as_object().map(|obj| obj.keys().collect::<Vec<_>>()));
+    // Check if we need to fallback (either no iteration was found, or the iteration was empty)
+    let is_empty = items_data["workItems"].as_array().map(|a| a.is_empty()).unwrap_or(true) 
+                && items_data["workItemRelations"].as_array().map(|a| a.is_empty()).unwrap_or(true);
+
+    if is_empty && area_path.is_some() {
+        if let Some(path) = area_path {
+            println!("Backend: Iteration is empty or not found. Falling back to area path: {}", path);
+            
+            let wiql_url = format!("{}/{}/_apis/wit/wiql?api-version=7.1", base_url, proj_encoded);
+            let op = if recursive.unwrap_or(true) { "UNDER" } else { "=" };
+            let query_str = format!(
+                "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{}' AND [System.AreaPath] {} '{}' AND [System.WorkItemType] IN ('User Story', 'Story', 'Task', 'Bug', 'Product Backlog Item', 'Requirement', 'Issue') AND [System.State] NOT IN ('Closed', 'Removed')",
+                proj.replace("'", "''"), op, path.replace("'", "''")
+            );
+
+            let query = serde_json::json!({ "query": query_str });
+            let wiql_res = client.post(&wiql_url)
+                .basic_auth("", Some(token.clone()))
+                .json(&query)
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if wiql_res.status().is_success() {
+                let res_data: serde_json::Value = wiql_res.json().await.map_err(|e| e.to_string())?;
+                if let Some(items) = res_data["workItems"].as_array() {
+                    items_data["workItems"] = serde_json::Value::Array(items.clone());
+                }
+            }
+        }
+    } else if is_empty && final_iteration_id.is_none() {
+        return Err("No iteration selected and no team area path available for fallback.".to_string());
+    }
+
+    println!("Backend: Data retrieved. Keys: {:?}", items_data.as_object().map(|obj| obj.keys().collect::<Vec<_>>()));
     let mut all_ids = std::collections::HashSet::new();
     
     // 1. Collect from flat workItems list
@@ -284,7 +307,7 @@ async fn fetch_azure_hierarchy(organization: String, project: String, team: Stri
             let details_url = format!("{}/{}/_apis/wit/workitemsbatch?api-version=7.1", base_url, proj_encoded);
             let details_query = serde_json::json!({
                 "ids": chunk,
-                "fields": ["System.Id", "System.Title", "System.WorkItemType", "System.Parent"]
+                "fields": ["System.Id", "System.Title", "System.State", "System.WorkItemType", "System.Parent", "System.AssignedTo", "System.AreaPath", "System.IterationPath"]
             });
 
             let res = client.post(&details_url)
@@ -431,7 +454,8 @@ async fn create_azure_work_item(
     assignee: Option<String>,
     iteration_path: Option<String>,
     area_path: Option<String>,
-    parent_id: Option<i32>, // Added parent_id
+    parent_id: Option<i32>,
+    status: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let org = organization.trim().trim_end_matches("/");
     let proj = project.trim().trim_end_matches("/");
@@ -483,6 +507,16 @@ async fn create_azure_work_item(
                 "op": "add",
                 "path": "/fields/System.AreaPath",
                 "value": path
+            }));
+        }
+    }
+
+    if let Some(st) = status {
+        if !st.trim().is_empty() {
+            patch.push(serde_json::json!({
+                "op": "add",
+                "path": "/fields/System.State",
+                "value": st
             }));
         }
     }

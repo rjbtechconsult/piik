@@ -37,16 +37,16 @@ interface AzureTeam {
 
 const formatErrorMessage = (error: string | null): string => {
   if (!error) return "";
-  
+
   // Strip common prefixes
   let clean = error.replace(/^(Failed to fetch teams: |Failed to update status: |Failed to fetch iterations: |Failed to fetch hierarchy: )/i, "");
-  
+
   // Handle HTTP 404 (Resource not found)
   if (clean.includes("404 Not Found")) {
     if (clean.includes("Team") || clean.includes("Project") || clean.includes("TeamFoundation")) {
       return "The Team or Project name in your settings might be incorrect. Please check for typos or ensure the project exists.";
     }
-    
+
     const jsonPart = clean.split("404 Not Found - ")[1];
     if (jsonPart) {
       try {
@@ -92,7 +92,7 @@ function App() {
   const [selectedIteration, setSelectedIteration] = useState<any | null>(null);
   const [selectedStoryId, setSelectedStoryId] = useState<number | null>(null);
   const [statusFilters, setStatusFilters] = useState<string[]>(["New", "Active", "To Do", "Doing", "InProgress", "In-Progress", "Open", "Approved", "Committed"]);
-  const [hierarchy, setHierarchy] = useState<HierarchyNode[]>([]);
+  const [hierarchyData, setHierarchyData] = useState<{ nodes: HierarchyNode[], items: any[] }>({ nodes: [], items: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [teamSettings, setTeamSettings] = useState<{ defaultAreaPath: string | null }>({ defaultAreaPath: null });
   const [error, setError] = useState<string | null>(null);
@@ -111,14 +111,13 @@ function App() {
   const [azureConfig, setAzureConfig] = useState<{ org: string; project: string }>({ org: "", project: "" });
   const [epics, setEpics] = useState<any[]>([]);
   const [isEpicsLoading, setIsEpicsLoading] = useState(false);
-  const [allWorkItems, setAllWorkItems] = useState<any[]>([]);
- 
+
   const lastWorkItemsRef = useRef<Record<number, string | null>>({});
   const appStartTimeRef = useRef<Date>(new Date());
   const isInitialLoadRef = useRef<boolean>(true);
-  
+
   const isConnected = teams.length > 0;
- 
+
   useEffect(() => {
     const initNotifications = async () => {
       let permissionGranted = await isPermissionGranted();
@@ -129,44 +128,44 @@ function App() {
     };
     initNotifications();
   }, []);
- 
+
   const workloads = useMemo(() => {
     const counts: Record<string, number> = {};
-    
+
     const countActiveItems = (nodes: HierarchyNode[]) => {
       nodes.forEach(node => {
         const assignedTo = node.item.fields["System.AssignedTo"];
         const state = node.item.fields["System.State"];
         const type = node.item.fields["System.WorkItemType"];
-        
+
         // Count as "Active" if it's a Tasks or Bug in an active state
-        const isActiveState = ["Active", "Doing", "InProgress", "In-Progress"].includes(state);
+        const isActiveState = ["New", "To Do", "Proposed", "Active", "Doing", "InProgress", "In-Progress"].includes(state);
         const isLeafWorkItem = type === "Task" || type === "Bug";
-        
+
         if (isActiveState && isLeafWorkItem && assignedTo) {
           const uniqueName = typeof assignedTo === 'string' ? assignedTo : assignedTo.uniqueName;
           if (uniqueName) {
             counts[uniqueName] = (counts[uniqueName] || 0) + 1;
           }
         }
-        
+
         if (node.children && node.children.length > 0) {
           countActiveItems(node.children);
         }
       });
     };
-    
-    countActiveItems(hierarchy);
+
+    countActiveItems(hierarchyData.nodes);
     return counts;
-  }, [hierarchy]);
+  }, [hierarchyData.nodes]);
 
   useEffect(() => {
     if (!selectedTeam || !selectedIteration) return;
- 
+
     const interval = setInterval(() => {
       fetchHierarchy(selectedIteration.id, true);
     }, 300000); // 5 minutes
- 
+
     return () => clearInterval(interval);
   }, [selectedTeam, selectedIteration]);
 
@@ -214,50 +213,64 @@ function App() {
   };
 
   const refreshTrayBadge = (itemsOverride?: any[]) => {
-    // If no items are provided, flatten the current hierarchy to get all items (including sub-tasks)
-    const flattenNodes = (nodes: HierarchyNode[]): AzureWorkItem[] => {
-      let result: AzureWorkItem[] = [];
+    const flattenNodes = (nodes: HierarchyNode[]): any[] => {
+      let result: any[] = [];
       nodes.forEach(node => {
         result.push(node.item);
         if (node.children && node.children.length > 0) {
-          result = result.concat(flattenNodes(node.children));
+          result = [...result, ...flattenNodes(node.children)];
         }
       });
       return result;
     };
 
-    const itemsToCount = itemsOverride || flattenNodes(hierarchy);
-    
+    const itemsToCount = itemsOverride || flattenNodes(hierarchyData.nodes);
+
     // If we don't have a current user, we can't count "my" tasks, so we clear the badge
     if (!currentUser) {
-      invoke("update_tray_badge", { count: 0 }).catch(() => {});
+      invoke("update_tray_badge", { count: 0 }).catch(() => { });
       return;
     }
 
-    const myTasks = itemsToCount.filter((item: any) => {
+    const isOwnedByMe = (item: any): boolean => {
       if (!item || !item.fields) return false;
       const assignedTo = item.fields["System.AssignedTo"];
-      const type = item.fields["System.WorkItemType"];
-      const state = (item.fields["System.State"] || "").toLowerCase();
       
       const isMe = assignedTo && currentUser && (
         assignedTo.uniqueName === currentUser.uniqueName ||
         assignedTo.id === currentUser.id ||
-        assignedTo.displayName === currentUser.displayName
+        assignedTo.displayName === currentUser.displayName ||
+        (assignedTo.uniqueName && currentUser.uniqueName && assignedTo.uniqueName.toLowerCase() === currentUser.uniqueName.toLowerCase())
       );
+      
+      if (isMe) return true;
+
+      // Recursive check for parent ownership
+      const parentId = item.fields["System.Parent"];
+      if (parentId) {
+        const parent = hierarchyData.items.find(i => i.id === parentId);
+        if (parent) return isOwnedByMe(parent);
+      }
+      return false;
+    };
+
+    const myTasks = itemsToCount.filter(item => {
+      const type = item.fields["System.WorkItemType"];
+      const state = (item.fields["System.State"] || "").toLowerCase();
 
       // Only count active Tasks and Bugs
       const isWorkItem = type === "Task" || type === "Bug";
-      
-      return isMe && isWorkItem && statusFilters.map(s => s.toLowerCase()).includes(state);
+      const isVisible = statusFilters.map(s => s.toLowerCase()).includes(state);
+
+      return isWorkItem && isVisible && isOwnedByMe(item);
     });
-    
+
     invoke("update_tray_badge", { count: myTasks.length }).catch(console.error);
   };
 
   const availableStatuses = useMemo(() => {
     const states = new Set<string>();
-    allWorkItems.forEach(item => {
+    hierarchyData.items.forEach(item => {
       if (item.fields["System.State"]) {
         states.add(item.fields["System.State"]);
       }
@@ -266,12 +279,12 @@ function App() {
     const defaults = ["New", "Active", "Resolved", "Closed", "To Do", "Doing", "Done", "Removed", "Approved", "Committed"];
     defaults.forEach(s => states.add(s));
     return Array.from(states).sort();
-  }, [allWorkItems]);
+  }, [hierarchyData.items]);
 
   // Update tray badge whenever the current user or hierarchy changes
   useEffect(() => {
     refreshTrayBadge();
-  }, [currentUser, hierarchy, statusFilters]);
+  }, [currentUser, hierarchyData.nodes, statusFilters]);
 
   useEffect(() => {
     if (selectedTeam) {
@@ -303,11 +316,13 @@ function App() {
   }, [selectedTeam]);
 
   useEffect(() => {
-    if (selectedIteration) {
-      fetchHierarchy(selectedIteration.id);
+    // Only fetch hierarchy if we have target team AND we've loaded team settings (for area path fallback)
+    // and we have either an iteration or the area path ready.
+    if (selectedTeam && teamSettings.defaultAreaPath) {
+      fetchHierarchy();
       setSelectedStoryId(null);
     }
-  }, [selectedIteration]);
+  }, [selectedTeam, selectedIteration, teamSettings.defaultAreaPath]);
 
   const fetchTeams = async () => {
     setIsLoading(true);
@@ -330,11 +345,11 @@ function App() {
       const teamsData = await invoke<any>("fetch_azure_teams", { organization: org, project, token });
       if (teamsData.value) {
         setTeams(teamsData.value);
-        
+
         // Try to restore last selected team
         const lastSelected = await getSetting("last_selected_team");
         const exists = teamsData.value.find((t: any) => t.name === lastSelected);
-        
+
         if (exists) {
           setSelectedTeam(lastSelected!);
         } else if (!selectedTeam && teamsData.value.length > 0) {
@@ -405,13 +420,14 @@ function App() {
         project,
         team: selectedTeam,
         token,
-        iterationId: itId
+        iterationId: itId || null,
+        areaPath: teamSettings.defaultAreaPath || null,
+        recursive: true
       });
 
       if (hData.workItems && hData.relations) {
         const tree = buildTree(hData.workItems, hData.relations);
-        setHierarchy(tree);
-        setAllWorkItems(hData.workItems);
+        setHierarchyData({ nodes: tree, items: hData.workItems });
         refreshTrayBadge(hData.workItems);
 
         const newItems = hData.workItems as any[];
@@ -422,14 +438,14 @@ function App() {
           if (!item || !item.fields) return;
           const id = item.fields["System.Id"];
           if (!id) return;
-          
+
           const currentAssignee = item.fields["System.AssignedTo"]?.displayName || item.fields["System.AssignedTo"]?.uniqueName || null;
           const prevAssignee = lastWorkItemsRef.current[id];
-          
+
           if (hasPreviousState && currentAssignee && currentAssignee !== prevAssignee) {
             const createdDateStr = item.fields["System.CreatedDate"];
             const createdDate = createdDateStr ? new Date(createdDateStr) : null;
-            
+
             // Only notify if:
             // 1. It's truly an assignment change to the user (or someone else)
             // 2. It's not a "new" item that was actually created before the app started
@@ -446,14 +462,13 @@ function App() {
           lastWorkItemsRef.current[id] = currentAssignee;
         });
 
-        // Batch and replace notifications
         if (pendingNotifications.length > 0) {
           if (pendingNotifications.length > 3) {
             sendNotification({
               title: "Work Item Updates",
               body: `${pendingNotifications.length} items were updated or assigned.`,
               // @ts-ignore - Some versions of the plugin support id/tag for replacement
-              id: "piik-update-batch" 
+              id: "piik-update-batch"
             });
           } else {
             pendingNotifications.forEach((notification, idx) => {
@@ -495,15 +510,15 @@ function App() {
 
       if (settingsData && (settingsData.defaultValue || settingsData.field?.referenceName === 'System.AreaPath')) {
         // If defaultValue is an object (unexpected but possible), try to get path
-        const defaultValue = typeof settingsData.defaultValue === 'string' 
-          ? settingsData.defaultValue 
+        const defaultValue = typeof settingsData.defaultValue === 'string'
+          ? settingsData.defaultValue
           : (settingsData.defaultValue?.path || null);
-        
+
         if (!teamName || teamName === selectedTeam) {
           setTeamSettings({ defaultAreaPath: defaultValue });
           console.log("App: Team default area path set to:", defaultValue);
         }
-        
+
         // Find if the default area path has recursive inclusion
         const defaultPathValue = settingsData.values?.find((v: any) => v.value === defaultValue);
         return {
@@ -621,14 +636,14 @@ function App() {
 
       if (!org || !project || !token) return;
 
-      await invoke("update_azure_item_parent", { 
-        organization: org, 
-        project: project, 
-        token: token, 
-        id: linkingParentFor.id, 
-        parentId: parentId 
+      await invoke("update_azure_item_parent", {
+        organization: org,
+        project: project,
+        token: token,
+        id: linkingParentFor.id,
+        parentId: parentId
       });
-      
+
       // Refresh hierarchy to show the new relationship
       if (selectedIteration) {
         await fetchHierarchy(selectedIteration.id, true);
@@ -640,7 +655,7 @@ function App() {
     }
   };
 
-  const handleCreateWorkItem = async (title: string, type: string, assigneeUniqueName: string, parentId?: number, areaPath?: string) => {
+  const handleCreateWorkItem = async (title: string, type: string, assigneeUniqueName: string, parentId?: number, areaPath?: string, status?: string) => {
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
@@ -658,7 +673,8 @@ function App() {
         assignee: assigneeUniqueName || null,
         iterationPath: selectedIteration?.path || null,
         areaPath: areaPath || teamSettings.defaultAreaPath || null,
-        parentId: parentId || null
+        parentId: parentId || null,
+        status: status || null
       });
 
       fetchHierarchy();
@@ -670,109 +686,73 @@ function App() {
   };
 
   const handleUpdateStatus = async (id: number, newStatus: string) => {
-    // 1. Optimistic UI Update
-    const previousHierarchy = [...hierarchy];
-    const updateNodeStatus = (nodes: HierarchyNode[]): HierarchyNode[] => {
-      return nodes.map(node => {
-        if (node.item.id === id) {
-          return {
-            ...node,
-            item: {
-              ...node.item,
-              fields: {
-                ...node.item.fields,
-                "System.State": newStatus
-              }
-            }
-          };
-        }
-        if (node.children.length > 0) {
-          return {
-            ...node,
-            children: updateNodeStatus(node.children)
-          };
-        }
-        return node;
-      });
-    };
-
-    setHierarchy(prev => updateNodeStatus(prev));
-
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
-      let token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => "");
-      if (!token) token = (await getSetting("azure_pat")) || "";
+      const token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => (getSetting("azure_pat") || ""));
 
       if (!org || !project || !token) return;
 
-      await invoke("update_azure_item_status", {
-        organization: org,
-        project,
-        token,
-        id,
-        status: newStatus
-      });
+      await invoke("update_azure_work_item_status", { organization: org, project, id, status: newStatus, token });
 
-      // 2. Silent background refresh to sync other fields (ChangedDate, etc.)
-      fetchHierarchy(undefined, true);
+      // Update local state immediately for responsiveness
+      const updateNodeStatus = (nodes: HierarchyNode[]): HierarchyNode[] => {
+        return nodes.map(node => {
+          if (node.item.id === id) {
+            return {
+              ...node,
+              item: {
+                ...node.item,
+                fields: { ...node.item.fields, "System.State": newStatus }
+              }
+            };
+          }
+          if (node.children) {
+            return { ...node, children: updateNodeStatus(node.children) };
+          }
+          return node;
+        });
+      };
+
+      setHierarchyData(prev => ({ ...prev, nodes: updateNodeStatus(prev.nodes) }));
     } catch (err) {
-      console.error("Failed to update status, reverting optimistic change:", err);
-      setHierarchy(previousHierarchy);
+      console.error("Failed to update status:", err);
       setError(err instanceof Error ? err.message : String(err));
     }
   };
 
   const handleUpdateTitle = async (id: number, newTitle: string) => {
-    // 1. Optimistic UI Update
-    const previousHierarchy = [...hierarchy];
-    const updateNodeTitle = (nodes: HierarchyNode[]): HierarchyNode[] => {
-      return nodes.map(node => {
-        if (node.item.id === id) {
-          return {
-            ...node,
-            item: {
-              ...node.item,
-              fields: {
-                ...node.item.fields,
-                "System.Title": newTitle
-              }
-            }
-          };
-        }
-        if (node.children.length > 0) {
-          return {
-            ...node,
-            children: updateNodeTitle(node.children)
-          };
-        }
-        return node;
-      });
-    };
-
-    setHierarchy(prev => updateNodeTitle(prev));
-
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
-      let token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => "");
-      if (!token) token = (await getSetting("azure_pat")) || "";
+      const token = await invoke<string>("get_token", { key: "azure_pat" }).catch(() => (getSetting("azure_pat") || ""));
 
       if (!org || !project || !token) return;
 
-      await invoke("update_azure_item_title", {
-        organization: org,
-        project,
-        token,
-        id,
-        title: newTitle
-      });
+      await invoke("update_azure_work_item_title", { organization: org, project, id, title: newTitle, token });
 
-      // 2. Silent background refresh to sync other fields (ChangedDate, etc.)
-      fetchHierarchy(undefined, true);
+      // Update local state immediately
+      const updateNodeTitle = (nodes: HierarchyNode[]): HierarchyNode[] => {
+        return nodes.map(node => {
+          if (node.item.id === id) {
+            return {
+              ...node,
+              item: {
+                ...node.item,
+                fields: { ...node.item.fields, "System.Title": newTitle }
+              }
+            };
+          }
+          if (node.children) {
+            return { ...node, children: updateNodeTitle(node.children) };
+          }
+          return node;
+        });
+      };
+
+      setHierarchyData(prev => ({ ...prev, nodes: updateNodeTitle(prev.nodes) }));
     } catch (err) {
-      console.error("Failed to update title, reverting optimistic change:", err);
-      setHierarchy(previousHierarchy);
+      console.error("Failed to update title:", err);
       setError(err instanceof Error ? err.message : String(err));
     }
   };
@@ -801,7 +781,7 @@ function App() {
     itemMap.forEach((node, id) => {
       // Sort children by ID descending for visual stability
       node.children.sort((a, b) => b.item.id - a.item.id);
-      
+
       if (!childIds.has(id)) {
         rootNodes.push(node);
       }
@@ -817,13 +797,14 @@ function App() {
     console.log("App: handleDisconnect initiated");
     setTeams([]);
     setIterations([]);
-    setHierarchy([]);
+    setHierarchyData({ nodes: [], items: [] });
+    setEpics([]);
     setSelectedTeam("");
     setSelectedIteration(null);
     setSelectedStoryId(null);
     setAssigneeFilter([]);
     setCurrentUser(null);
-    invoke("update_tray_badge", { count: 0 }).catch(() => {});
+    invoke("update_tray_badge", { count: 0 }).catch(() => { });
     setError(null);
     setShowSettings(false); // Close settings to show landing screen
     console.log("App: State reset complete, showing landing screen");
@@ -838,7 +819,7 @@ function App() {
               <div className="flex-1 flex items-center gap-2 pl-3 mr-2">
                 <div className="relative flex-1 group">
                   <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-dim)] group-focus-within:text-[var(--accent-blue)] transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
                   </div>
                   <input
                     autoFocus
@@ -849,15 +830,15 @@ function App() {
                     className="w-full bg-[var(--card-bg-subtle)] border border-[var(--border-main)] rounded-lg pl-8 pr-8 py-1.5 text-[11px] placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent-blue)] focus:ring-1 focus:ring-[var(--accent-blue)]/30 transition-all font-medium"
                   />
                   {searchQuery && (
-                    <button 
+                    <button
                       onClick={() => setSearchQuery("")}
                       className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-dim)] hover:text-[var(--text-main)]"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m18 6-12 12M6 6l12 12"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m18 6-12 12M6 6l12 12" /></svg>
                     </button>
                   )}
                 </div>
-                <button 
+                <button
                   onClick={() => { setIsSearchOpen(false); setSearchQuery(""); }}
                   className="px-2 py-1.5 rounded-lg hover:bg-[var(--card-hover)] text-[var(--text-dim)] hover:text-[var(--text-main)] transition-all font-bold text-[10px] uppercase tracking-tight shrink-0"
                 >
@@ -882,7 +863,7 @@ function App() {
                   className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale"
                   title="Search"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
                 </button>
               )}
               <button
@@ -891,7 +872,7 @@ function App() {
                 className={`p-1.5 rounded-lg transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${isFilterOpen ? 'bg-[var(--accent-blue)]/20 text-[var(--accent-blue)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                 title="Filters"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
               </button>
               <button
                 onClick={() => isConnected && (selectedTeam ? fetchHierarchy() : fetchTeams())}
@@ -990,8 +971,8 @@ function App() {
                 {formatErrorMessage(error)}
               </p>
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setError(null)} 
+                <button
+                  onClick={() => setError(null)}
                   className="p-1 px-4 bg-[var(--card-bg-subtle)] hover:bg-[var(--card-hover)] text-[var(--text-dim)] text-[10px] font-bold rounded-lg border border-[var(--border-main)] transition-all"
                 >
                   Dismiss
@@ -1029,34 +1010,34 @@ function App() {
           )}
 
           {!isLoading && !error && selectedTeam && (
-          <HierarchyExplorer
-            hierarchy={hierarchy}
-            isLoading={isLoading}
-            selectedStoryId={selectedStoryId}
-            onSelectStory={setSelectedStoryId}
-            statusFilters={statusFilters}
-            assigneeFilters={assigneeFilter}
-            epicFilter={epicFilter}
-            searchQuery={searchQuery}
-            baseUrl={azureConfig.org && azureConfig.project ? `https://dev.azure.com/${azureConfig.org}/${azureConfig.project}/_workitems/edit/` : ""}
-            onUpdateStatus={handleUpdateStatus}
-            onUpdateTitle={handleUpdateTitle}
-            onCreateSubItem={(id: number, title: string, areaPath: string, iterationPath: string) => {
-              setCreatingSubItemFor({ id, title, areaPath, iterationPath });
-              setShowCreateModal(true);
-            }}
-            onLinkParent={(id: number) => {
-              const item = allWorkItems.find(i => i.id === id);
-              if (item) {
-                setLinkingParentFor({ id, title: item.fields["System.Title"] });
-                // Ensure epics list is scoped to current team before opening modal
-                if (selectedTeam) {
-                  fetchEpicsForTeam(selectedTeam);
+            <HierarchyExplorer
+              hierarchy={hierarchyData.nodes}
+              isLoading={isLoading}
+              selectedStoryId={selectedStoryId}
+              onSelectStory={setSelectedStoryId}
+              statusFilters={statusFilters}
+              assigneeFilters={assigneeFilter}
+              epicFilter={epicFilter}
+              searchQuery={searchQuery}
+              baseUrl={azureConfig.org && azureConfig.project ? `https://dev.azure.com/${azureConfig.org}/${azureConfig.project}/_workitems/edit/` : ""}
+              onUpdateStatus={handleUpdateStatus}
+              onUpdateTitle={handleUpdateTitle}
+              onCreateSubItem={(id: number, title: string, areaPath: string, iterationPath: string) => {
+                setCreatingSubItemFor({ id, title, areaPath, iterationPath });
+                setShowCreateModal(true);
+              }}
+              onLinkParent={(id: number) => {
+                const item = hierarchyData.items.find(i => i.id === id);
+                if (item) {
+                  setLinkingParentFor({ id, title: item.fields["System.Title"] });
+                  // Ensure epics list is scoped to current team before opening modal
+                  if (selectedTeam) {
+                    fetchEpicsForTeam(selectedTeam);
+                  }
                 }
-              }
-            }}
-            allWorkItems={allWorkItems}
-          />
+              }}
+              allWorkItems={hierarchyData.items}
+            />
           )}
         </div>
 
@@ -1075,6 +1056,7 @@ function App() {
             teams={teams}
             selectedTeam={selectedTeam || undefined}
             onEpicTeamChange={fetchEpicsForTeam}
+            availableStatuses={availableStatuses}
           />
         )}
 

@@ -1,15 +1,15 @@
 {
-  "version": "v0.2.6",
-  "notes": "Hierarchical parent editing and UI improvements.",
-  "pub_date": "2026-03-25T17:59:34.613Z",
+  "version": "v0.2.9",
+  "notes": "Smart hierarchy falls back for Board-first teams and inherited ownership tracking.",
+  "pub_date": "2026-03-31T01:50:00.000Z",
   "platforms": {
     "darwin-x86_64": {
-      "signature": "untrusted comment: signature from tauri secret key\nRUSJdO/RG0uGxO6mVXmHWefLvaUYkvKrVJXKFDFkrtq2vFTj+8T3OP0xgY4XZzYmIa5kbUuqWmb0vLijWxRYGXOWfvO1ERdhIAY=\ntrusted comment: timestamp:1774461537\tfile:Piik_0.2.6_aarch64.dmg\nnSil3KPB4VM/Xar1RDzRHBhemQneTX/u/th+ZcdOUUHIuctwqyXOviE381+PRU38rzlpaC/o0DK4sdJr/d4YCA==",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.6/Piik.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.2.9",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.9/Piik.dmg"
     },
     "darwin-aarch64": {
-      "signature": "untrusted comment: signature from tauri secret key\nRUSJdO/RG0uGxO6mVXmHWefLvaUYkvKrVJXKFDFkrtq2vFTj+8T3OP0xgY4XZzYmIa5kbUuqWmb0vLijWxRYGXOWfvO1ERdhIAY=\ntrusted comment: timestamp:1774461537\tfile:Piik_0.2.6_aarch64.dmg\nnSil3KPB4VM/Xar1RDzRHBhemQneTX/u/th+ZcdOUUHIuctwqyXOviE381+PRU38rzlpaC/o0DK4sdJr/d4YCA==",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.6/Piik.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.2.9",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.2.9/Piik.dmg"
     }
   }
 }

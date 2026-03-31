@@ -13,10 +13,10 @@ export const ReleaseNotes: React.FC = () => {
            transition={{ duration: 0.5 }}
            style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
-          <span className="badge">v0.2.1 Update</span>
-          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Inline Editing & UI Stability</h2>
+          <span className="badge">v0.2.9 Update</span>
+          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Smart Hierarchy & Inherited Ownership</h2>
           <p style={{ margin: '0 auto', maxWidth: '600px' }}>
-            A major leap in productivity with in-place editing and a deterministic layout engine for consistent navigation.
+            Unlocking Azure DevOps for all teams with Board-first hierarchy fallbacks and managerial "Inherited Ownership" tracking.
           </p>
         </motion.div>
 
@@ -27,7 +27,7 @@ export const ReleaseNotes: React.FC = () => {
           maxWidth: '1100px',
           margin: '0 auto'
         }}>
-           {/* Card 1: Inline Editing */}
+           {/* Card 1: Board-First Hierarchy */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -49,13 +49,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Inline Title Editing</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Board-First Hierarchy</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Edit your stories, tasks, and bugs directly in the Hierarchy Explorer. No more context switching to Azure DevOps—just click, edit, and save.
+                Teams tracking tasks on Boards (without Iterations) are now fully supported. Piik automatically falls back to Area Path queries to ensure no item is left behind.
              </p>
            </motion.div>
 
-           {/* Card 2: Deterministic Stability */}
+           {/* Card 2: Inherited Ownership */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -77,13 +77,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Sparkles size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Rock-Solid Stability</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Inherited Ownership</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Implemented recursive stable sorting by ID across our backend and frontend. Your items stay exactly where you left them, even during silent background refreshes.
+                Managers and Leads can now track total work volumes. If you own an Epic or Story, all child tasks are included in your tray badge count automatically.
              </p>
            </motion.div>
 
-           {/* Card 3: UX & Performance */}
+           {/* Card 3: Creation Workflow */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -105,9 +105,9 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>UX Refinements</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Creation Workflow</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Full title visibility for all work items with smart text-wrapping, combined with pointer cursors and optimized icon placement for a truly premium experience.
+                New "Status" dropdown in the creation modal ensures items start in the right state (New, Active, etc.) without needing a follow-up edit.
              </p>
            </motion.div>
         </div>
@@ -120,7 +120,7 @@ export const ReleaseNotes: React.FC = () => {
           style={{ marginTop: '4rem', textAlign: 'center' }}
         >
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            Latest Release: March 25, 2026
+            Latest Release: March 31, 2026
           </div>
         </motion.div>
       </div>

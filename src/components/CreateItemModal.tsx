@@ -10,8 +10,9 @@ interface TeamMember {
 
 interface CreateItemModalProps {
   onClose: () => void;
-  onSave: (title: string, type: string, assigneeUniqueName: string, parentId?: number, areaPath?: string) => Promise<void>;
+  onSave: (title: string, type: string, assigneeUniqueName: string, parentId?: number, areaPath?: string, status?: string) => Promise<void>;
   teamMembers: TeamMember[];
+  availableStatuses?: string[];
   isLoading: boolean;
   parentItem?: { id: number; title: string; areaPath: string; iterationPath: string };
   defaultAssigneeUniqueName?: string;
@@ -31,10 +32,12 @@ export function CreateItemModal({
   epics = [], 
   teams = [],
   selectedTeam,
-  onEpicTeamChange
+  onEpicTeamChange,
+  availableStatuses = ["New", "Active", "To Do", "Doing", "InProgress", "In-Progress", "Open", "Approved", "Committed"]
 }: CreateItemModalProps) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState(parentItem ? "Task" : "User Story");
+  const [status, setStatus] = useState("Active");
   const [assignee, setAssignee] = useState(defaultAssigneeUniqueName || "");
   const [selectedParentEpic, setSelectedParentEpic] = useState<string>("");
   const [modalSelectedTeam, setModalSelectedTeam] = useState(selectedTeam || "");
@@ -60,7 +63,7 @@ export function CreateItemModal({
     try {
       // Use parentItem.id if it's a sub-item, otherwise use selectedParentEpic if it's a Story
       const effectiveParentId = parentItem?.id || (selectedParentEpic ? parseInt(selectedParentEpic) : undefined);
-      await onSave(title, type, assignee, effectiveParentId, parentItem?.areaPath);
+      await onSave(title, type, assignee, effectiveParentId, parentItem?.areaPath, status);
       onClose();
     } catch (error) {
       console.error("Failed to create item:", error);
@@ -258,6 +261,21 @@ export function CreateItemModal({
                       className="bg-[var(--app-bg-solid)]"
                     >
                       {member.identity.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--text-dim)] uppercase tracking-wider ml-1">Status</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full bg-white/5 border border-[var(--border-main)] rounded-xl px-3 py-2.5 text-[12px] text-[var(--text-main)] focus:outline-none focus:border-[var(--accent-blue)]/50 appearance-none transition-all cursor-pointer"
+                >
+                  {availableStatuses.map((s) => (
+                    <option key={s} value={s} className="bg-[var(--app-bg-solid)]">
+                      {s}
                     </option>
                   ))}
                 </select>

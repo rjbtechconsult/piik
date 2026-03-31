@@ -252,7 +252,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                         title="Change Parent Epic"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-dim)] hover:text-[var(--accent-blue)]">
-                          <path d="m7 16-4-4 4-4"/><path d="m17 8 4 4-4 4"/><path d="M3 12h18"/>
+                          <path d="m7 16-4-4 4-4" /><path d="m17 8 4 4-4 4" /><path d="M3 12h18" />
                         </svg>
                       </button>
                     </div>
@@ -277,18 +277,18 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                     <span className="px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/20 text-[var(--accent-blue)] text-[9px] font-black uppercase tracking-wider border border-[var(--accent-blue)]/30">
                       Story
                     </span>
-                    <span 
+                    <span
                       className="text-[11px] font-bold text-[var(--text-dim)] tracking-tight flex items-center gap-1.5 select-text cursor-text"
                       onClick={(e) => e.stopPropagation()}
                     >
                       #{node.item.id}
                     </span>
                   </div>
-                  
+
                   <div className="flex-1 min-w-0 group/title flex items-center gap-1.5">
                     {isEditingTitle ? (
-                      <form 
-                        onSubmit={handleSaveTitle} 
+                      <form
+                        onSubmit={handleSaveTitle}
                         className="flex-1 flex items-center gap-1.5"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -310,10 +310,10 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                         />
                         <div className="flex items-center gap-1 shrink-0">
                           <button type="submit" className="p-1 hover:bg-green-500/10 rounded transition-colors cursor-pointer" title="Save title">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><polyline points="20 6 9 17 4 12"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><polyline points="20 6 9 17 4 12" /></svg>
                           </button>
                           <button type="button" onClick={() => { setIsEditingTitle(false); setEditedTitle(itemTitle); }} className="p-1 hover:bg-red-500/10 rounded transition-colors cursor-pointer" title="Cancel">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                           </button>
                         </div>
                       </form>
@@ -330,11 +330,11 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                             title="Edit title"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-dim)] hover:text-[var(--accent-blue)]">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); handleCopyTitle(e); }} className={`p-1 hover:bg-[var(--card-hover)] rounded transition-colors cursor-pointer ${copyTitleFeedback ? 'text-green-400' : 'text-orange-400/80 hover:text-orange-400'}`} title="Copy item title">
-                            {copyTitleFeedback ? <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>}
+                            {copyTitleFeedback ? <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>}
                           </button>
                         </div>
                       </>
@@ -345,13 +345,13 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                 <div className="flex flex-col items-end gap-2 shrink-0 pl-3">
                   {node.children.length > 0 && (
                     <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--card-bg-subtle)] border border-[var(--border-subtle)]/50 text-[9px] text-[var(--text-dim)] font-black uppercase tracking-widest">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-60"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-60"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                       {node.children.length} {node.children.length === 1 ? 'Task' : 'Tasks'}
                     </div>
                   )}
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all shrink-0">
                     <button onClick={handleCopyLink} className={`p-1 hover:bg-[var(--card-hover)] rounded transition-colors cursor-pointer ${copyFeedback ? 'text-green-400' : 'text-[var(--text-dim)] hover:text-[var(--text-main)]'}`} title="Copy direct link">
-                      {copyFeedback ? <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
+                      {copyFeedback ? <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
                     </button>
                     <button onClick={handleOpenLink} className="p-1 hover:bg-[var(--card-hover)] rounded text-[var(--text-dim)] hover:text-[var(--accent-blue)] transition-all cursor-pointer" title="Open in Browser">
                       <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
@@ -446,8 +446,8 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
           <div className="flex-1 min-w-0 group/title flex items-center gap-1.5">
             {isEditingTitle ? (
-              <form 
-                onSubmit={handleSaveTitle} 
+              <form
+                onSubmit={handleSaveTitle}
                 className="flex-1 flex items-center gap-1.5"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -462,10 +462,10 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                 />
                 <div className="flex items-center gap-1 shrink-0">
                   <button type="submit" className="p-1 hover:bg-green-500/10 rounded transition-colors cursor-pointer" title="Save title">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><polyline points="20 6 9 17 4 12"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><polyline points="20 6 9 17 4 12" /></svg>
                   </button>
                   <button type="button" onClick={() => { setIsEditingTitle(false); setEditedTitle(itemTitle); }} className="p-1 hover:bg-red-500/10 rounded transition-colors cursor-pointer" title="Cancel">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                   </button>
                 </div>
               </form>
@@ -480,15 +480,15 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
                   title="Edit title"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-dim)] hover:text-[var(--accent-blue)]">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 </button>
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-auto pl-2">
                   <button onClick={handleCopyTitle} className={`p-1 hover:bg-[var(--card-hover)] rounded transition-colors cursor-pointer ${copyTitleFeedback ? 'text-green-400' : 'text-orange-400/80 hover:text-orange-400'}`} title="Copy item title">
-                    {copyTitleFeedback ? <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>}
+                    {copyTitleFeedback ? <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>}
                   </button>
                   <button onClick={handleCopyLink} className={`p-1 hover:bg-[var(--card-hover)] rounded transition-colors cursor-pointer ${copyFeedback ? 'text-green-400' : 'text-[var(--text-dim)] hover:text-[var(--text-main)]'}`} title="Copy direct link">
-                    {copyFeedback ? <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
+                    {copyFeedback ? <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
                   </button>
                   <button onClick={handleOpenLink} className="p-1 hover:bg-[var(--card-hover)] rounded text-[var(--text-dim)] hover:text-[var(--accent-blue)] transition-all cursor-pointer" title="Open in Browser">
                     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
@@ -499,7 +499,7 @@ function NodeView({ node, level, selectedStoryId, onSelectStory, statusFilters, 
           </div>
 
           <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <span 
+            <span
               className="text-[9px] font-mono text-[var(--text-dim)] flex items-center gap-1.5 select-text cursor-text"
               onClick={(e) => e.stopPropagation()}
             >
@@ -551,19 +551,19 @@ const filterHierarchy = (nodes: HierarchyNode[], assigneeFilters: string[], sear
     .map(node => {
       const assignedTo = node.item.fields["System.AssignedTo"];
       const assigneeMatches = assigneeFilters.length === 0 || assigneeFilters.includes(getAssigneeUniqueName(assignedTo));
-      
+
       const title = node.item.fields["System.Title"]?.toLowerCase() || "";
       const id = node.item.id.toString();
       const q = searchQuery.toLowerCase();
       const searchMatches = !searchQuery || title.includes(q) || id.includes(q);
-      
+
       const statusMatches = statusFilters.length === 0 || statusFilters.includes(node.item.fields["System.State"]);
-      
+
       const matchesSelf = assigneeMatches && searchMatches && statusMatches;
-      
+
       const filteredChildren = filterHierarchy(node.children, assigneeFilters, searchQuery, statusFilters, epicFilter, workItemLookup);
       const hasMatchingChild = filteredChildren.length > 0;
-      
+
       if (matchesSelf || hasMatchingChild) {
         return {
           ...node,
@@ -575,7 +575,7 @@ const filterHierarchy = (nodes: HierarchyNode[], assigneeFilters: string[], sear
     .filter((n): n is HierarchyNode => n !== null)
     .filter(node => {
       if (epicFilter.length === 0) return true;
-      
+
       const hasFilteredAncestor = (workItem: AzureWorkItem): boolean => {
         const parentId = workItem.fields["System.Parent"];
         if (!parentId) return false;
