@@ -81,7 +81,7 @@ export const InstallGuide: React.FC = () => {
           }}>
             <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
               <img 
-                src="/gatekeeper.png" 
+                src={`${import.meta.env.BASE_URL}gatekeeper.png`} 
                 alt="macOS Damaged App Dialog" 
                 style={{ 
                   maxWidth: '100%', 
