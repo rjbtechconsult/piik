@@ -41,7 +41,7 @@ export function SettingsModal({ onClose, onSave, onDisconnect, isConnected, init
       setOrganization(savedOrg);
       setProject(savedProject);
       if (savedOrg && savedProject) {
-        setProjectUrl(`https://dev.azure.com/${savedOrg}/${savedProject}`);
+        setProjectUrl(`https://dev.azure.com/${encodeURIComponent(savedOrg)}/${encodeURIComponent(savedProject)}`);
       }
       const savedTheme = await getSetting("theme") || "dark";
       const savedNotifications = await getSetting("notifications_enabled") || "true";

@@ -1131,7 +1131,7 @@ function App() {
               assigneeFilters={assigneeFilter}
               epicFilter={epicFilter}
               searchQuery={searchQuery}
-              baseUrl={azureConfig.org && azureConfig.project ? `https://dev.azure.com/${azureConfig.org}/${azureConfig.project}/_workitems/edit/` : ""}
+              baseUrl={azureConfig.org && azureConfig.project ? `https://dev.azure.com/${encodeURIComponent(azureConfig.org)}/${encodeURIComponent(azureConfig.project)}/_workitems/edit/` : ""}
               onUpdateStatus={handleUpdateStatus}
               onUpdateTitle={handleUpdateTitle}
               onCreateSubItem={(id: number, title: string, areaPath: string, iterationPath: string) => {
