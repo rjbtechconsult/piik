@@ -41,7 +41,7 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "bundleVersion": "51"
+      "bundleVersion": "53"
     }
   },
   "plugins": {
