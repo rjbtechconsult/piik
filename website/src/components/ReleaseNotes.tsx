@@ -13,10 +13,10 @@ export const ReleaseNotes: React.FC = () => {
            transition={{ duration: 0.5 }}
            style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
-          <span className="badge">v0.3.2 Update</span>
-          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Reliable Work Item Linking & Stability</h2>
+          <span className="badge">v0.3.3 Update</span>
+          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Creation Reporting & Export</h2>
           <p style={{ margin: '0 auto', maxWidth: '600px' }}>
-            Fixing URI encoding for direct links to ensure seamless sharing across all platforms, plus foundational stability improvements.
+            Introducing beautiful work item creation reporting with date range filtering, project and team scope switches, and instant CSV data export.
           </p>
         </motion.div>
 
@@ -120,7 +120,7 @@ export const ReleaseNotes: React.FC = () => {
           style={{ marginTop: '4rem', textAlign: 'center' }}
         >
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            Latest Release: April 7, 2026
+            Latest Release: May 20, 2026
           </div>
         </motion.div>
       </div>
