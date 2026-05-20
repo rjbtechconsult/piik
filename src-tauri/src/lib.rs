@@ -951,6 +951,109 @@ async fn fetch_azure_epics(organization: String, project: String, token: String,
 }
 
 #[tauri::command]
+async fn fetch_report_work_items(
+    organization: String,
+    project: String,
+    token: String,
+    start_date: String,
+    end_date: String,
+    area_path: Option<String>,
+) -> Result<serde_json::Value, String> {
+    let org = organization.trim().trim_end_matches("/");
+    let proj = project.trim().trim_end_matches("/");
+    let base_url = get_base_url(org);
+    let url = format!("{}/{}/_apis/wit/wiql?api-version=7.1", base_url, proj.replace(" ", "%20"));
+
+    let client = reqwest::Client::new();
+    
+    let mut query_str = format!(
+        "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '{}' AND [System.CreatedDate] >= '{}' AND [System.CreatedDate] <= '{}' AND [System.WorkItemType] IN ('Epic', 'Feature', 'User Story', 'Story', 'Task', 'Bug', 'Product Backlog Item', 'Requirement', 'Issue')",
+        proj.replace("'", "''"), start_date, end_date
+    );
+
+    if let Some(ref path) = area_path {
+        if !path.is_empty() {
+            query_str.push_str(&format!(" AND [System.AreaPath] UNDER '{}'", path.replace("'", "''")));
+        }
+    }
+
+    query_str.push_str(" ORDER BY [System.WorkItemType] ASC, [System.CreatedDate] DESC");
+
+    println!("Backend: Fetching report work items with WIQL: {}", query_str);
+
+    let query = serde_json::json!({
+        "query": query_str
+    });
+
+    let res = client.post(&url)
+        .basic_auth("", Some(token.clone()))
+        .json(&query)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let status = res.status();
+    let text = res.text().await.map_err(|e| e.to_string())?;
+
+    if status.is_success() {
+        let data: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+        
+        if let Some(items) = data["workItems"].as_array() {
+            println!("Backend: Found {} items for report in project '{}'", items.len(), proj);
+            if items.is_empty() {
+                return Ok(serde_json::json!([]));
+            }
+            
+            let ids: Vec<i64> = items.iter().filter_map(|i| i["id"].as_i64()).collect();
+            
+            let mut all_results = Vec::new();
+            let details_url = format!("{}/{}/_apis/wit/workitemsbatch?api-version=7.1", base_url, proj.replace(" ", "%20"));
+            
+            for chunk in ids.chunks(200) {
+                let details_query = serde_json::json!({
+                    "ids": chunk,
+                    "fields": [
+                        "System.Id",
+                        "System.Title",
+                        "System.WorkItemType",
+                        "System.State",
+                        "System.CreatedDate",
+                        "System.CreatedBy",
+                        "System.AssignedTo",
+                        "System.AreaPath",
+                        "System.IterationPath"
+                    ]
+                });
+                
+                let details_res = client.post(&details_url)
+                    .basic_auth("", Some(token.clone()))
+                    .json(&details_query)
+                    .send()
+                    .await
+                    .map_err(|e| e.to_string())?;
+                    
+                if details_res.status().is_success() {
+                    let details_data: serde_json::Value = details_res.json().await.map_err(|e| e.to_string())?;
+                    if let Some(values) = details_data["value"].as_array() {
+                        all_results.extend(values.clone());
+                    }
+                } else {
+                    let err_text = details_res.text().await.unwrap_or_default();
+                    println!("Backend: Report batch fetch failed: {}", err_text);
+                }
+            }
+            
+            println!("Backend: Returning {} report items with details", all_results.len());
+            return Ok(serde_json::json!(all_results));
+        }
+        Ok(serde_json::json!([]))
+    } else {
+        println!("Backend: Report WIQL request failed ({}): {}", status, text);
+        Err(format!("Failed to fetch report items: {} - {}", status, text))
+    }
+}
+
+#[tauri::command]
 async fn debug_azure_types(organization: String, project: String, token: String) -> Result<serde_json::Value, String> {
     let org = organization.trim().trim_end_matches("/");
     let proj = project.trim().trim_end_matches("/");
@@ -1072,7 +1175,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, update_azure_item_title, update_azure_item_parent, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me, fetch_work_item_states, fetch_azure_epics, debug_azure_types])
+        .invoke_handler(tauri::generate_handler![greet, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, update_azure_item_title, update_azure_item_parent, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me, fetch_work_item_states, fetch_azure_epics, debug_azure_types, fetch_report_work_items])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

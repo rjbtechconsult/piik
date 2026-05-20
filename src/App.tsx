@@ -7,6 +7,7 @@ import { IterationSelector } from "./components/IterationSelector";
 import { HierarchyExplorer } from "./components/HierarchyExplorer";
 import { CreateItemModal } from "./components/CreateItemModal";
 import { Dashboard } from "./components/Dashboard";
+import { Reports } from "./components/Reports";
 import { LinkParentModal } from "./components/LinkParentModal";
 import { AssigneeSelector } from "./components/AssigneeSelector";
 import { EpicFeatureSelector } from "./components/EpicFeatureSelector";
@@ -113,7 +114,7 @@ function App() {
   const [azurePat, setAzurePat] = useState<string>("");
   const [epics, setEpics] = useState<any[]>([]);
   const [isEpicsLoading, setIsEpicsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"board" | "dashboard">("board");
+  const [activeTab, setActiveTab] = useState<"board" | "dashboard" | "reports">("board");
 
   const lastWorkItemsRef = useRef<Record<number, string | null>>({});
   const appStartTimeRef = useRef<Date>(new Date());
@@ -1061,6 +1062,15 @@ function App() {
             >
               Dashboard
             </button>
+            <button
+              onClick={() => setActiveTab("reports")}
+              className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === "reports"
+                  ? "text-[var(--accent-blue)] border-b-2 border-[var(--accent-blue)]"
+                  : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
+                }`}
+            >
+              Reports
+            </button>
           </div>
         )}
 
@@ -1158,6 +1168,16 @@ function App() {
               teamMembers={teamMembers}
               isLoading={isLoading}
               teamName={selectedTeam}
+            />
+          )}
+
+          {!isLoading && !error && selectedTeam && activeTab === "reports" && (
+            <Reports
+              organization={azureConfig.org}
+              project={azureConfig.project}
+              token={azurePat}
+              selectedTeam={selectedTeam}
+              defaultAreaPath={teamSettings.defaultAreaPath}
             />
           )}
         </div>
