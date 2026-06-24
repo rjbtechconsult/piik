@@ -13,13 +13,13 @@ export const ReleaseNotes: React.FC = () => {
            transition={{ duration: 0.5 }}
            style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
-          <span className="badge">v0.3.3 Update</span>
-          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Creation Reporting & Export</h2>
+          <span className="badge">v0.3.4 Update</span>
+          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Detailed Report Filtering & Export</h2>
           <p style={{ margin: '0 auto', maxWidth: '600px' }}>
-            Introducing beautiful work item creation reporting with date range filtering, project and team scope switches, and instant CSV data export.
+            Introducing advanced filtering for work item reports. You can now filter exports by specific Stories/Epics and team Assignees, and track completion with the new Closed Date column.
           </p>
         </motion.div>
-
+ 
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
@@ -27,7 +27,7 @@ export const ReleaseNotes: React.FC = () => {
           maxWidth: '1100px',
           margin: '0 auto'
         }}>
-           {/* Card 1: Board-First Hierarchy */}
+           {/* Card 1: Story & Epic Filtering */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -49,13 +49,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Board-First Hierarchy</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Story & Epic Filtering</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Teams tracking tasks on Boards (without Iterations) are now fully supported. Piik automatically falls back to Area Path queries to ensure no item is left behind.
+                Filter your reports dynamically in the UI and CSV downloads by selecting one or more parent User Stories, Backlog Items, or Epics worked on during the period.
              </p>
            </motion.div>
-
-           {/* Card 2: Inherited Ownership */}
+ 
+           {/* Card 2: Assignee Filtering */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -77,13 +77,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Sparkles size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Inherited Ownership</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Assignee Filtering</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Managers and Leads can now track total work volumes. If you own an Epic or Story, all child tasks are included in your tray badge count automatically.
+                Narrow down your report list by individual team members (e.g. UX Engineering). Check workloads and export assignee-specific CSVs instantly.
              </p>
            </motion.div>
-
-           {/* Card 3: Creation Workflow */}
+ 
+           {/* Card 3: Closed Date Column */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -105,13 +105,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Creation Workflow</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Closed Date Tracking</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                New "Status" dropdown in the creation modal ensures items start in the right state (New, Active, etc.) without needing a follow-up edit.
+                Exported CSV files now include a dedicated Closed Date column immediately following Created Date to easily identify when tasks were completed.
              </p>
            </motion.div>
         </div>
-
+ 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -120,7 +120,7 @@ export const ReleaseNotes: React.FC = () => {
           style={{ marginTop: '4rem', textAlign: 'center' }}
         >
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            Latest Release: May 20, 2026
+            Latest Release: June 24, 2026
           </div>
         </motion.div>
       </div>

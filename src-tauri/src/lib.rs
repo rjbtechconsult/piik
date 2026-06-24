@@ -1001,7 +1001,10 @@ async fn fetch_report_work_items(
         if let Some(items) = data["workItems"].as_array() {
             println!("Backend: Found {} items for report in project '{}'", items.len(), proj);
             if items.is_empty() {
-                return Ok(serde_json::json!([]));
+                return Ok(serde_json::json!({
+                    "items": [],
+                    "parents": []
+                }));
             }
             
             let ids: Vec<i64> = items.iter().filter_map(|i| i["id"].as_i64()).collect();
@@ -1021,7 +1024,9 @@ async fn fetch_report_work_items(
                         "System.CreatedBy",
                         "System.AssignedTo",
                         "System.AreaPath",
-                        "System.IterationPath"
+                        "System.IterationPath",
+                        "System.Parent",
+                        "Microsoft.VSTS.Common.ClosedDate"
                     ]
                 });
                 
@@ -1043,10 +1048,90 @@ async fn fetch_report_work_items(
                 }
             }
             
-            println!("Backend: Returning {} report items with details", all_results.len());
-            return Ok(serde_json::json!(all_results));
+            // Collect all unique Parent IDs that we need to fetch
+            let mut fetched_ids: std::collections::HashSet<i64> = all_results.iter().filter_map(|wi| wi["id"].as_i64()).collect();
+            let mut parents_to_fetch = std::collections::HashSet::new();
+
+            for item in &all_results {
+                if let Some(parent_id) = item["fields"]["System.Parent"].as_i64() {
+                    if !fetched_ids.contains(&parent_id) {
+                        parents_to_fetch.insert(parent_id);
+                    }
+                }
+            }
+
+            let mut referenced_parents = Vec::new();
+            
+            // Loop up to 2 levels of hierarchy to get parent of parent (e.g. Task -> Story -> Epic)
+            for _level in 0..2 {
+                if parents_to_fetch.is_empty() {
+                    break;
+                }
+                
+                let current_batch: Vec<i64> = parents_to_fetch.into_iter().collect();
+                parents_to_fetch = std::collections::HashSet::new(); // reset for next level
+                
+                let mut fetched_batch = Vec::new();
+                for chunk in current_batch.chunks(200) {
+                    let parent_query = serde_json::json!({
+                        "ids": chunk,
+                        "fields": [
+                            "System.Id",
+                            "System.Title",
+                            "System.WorkItemType",
+                            "System.State",
+                            "System.CreatedDate",
+                            "System.CreatedBy",
+                            "System.AssignedTo",
+                            "System.AreaPath",
+                            "System.IterationPath",
+                            "System.Parent",
+                            "Microsoft.VSTS.Common.ClosedDate"
+                        ]
+                    });
+                    
+                    let parent_res = client.post(&details_url)
+                        .basic_auth("", Some(token.clone()))
+                        .json(&parent_query)
+                        .send()
+                        .await
+                        .map_err(|e| e.to_string())?;
+                        
+                    if parent_res.status().is_success() {
+                        let parent_data: serde_json::Value = parent_res.json().await.map_err(|e| e.to_string())?;
+                        if let Some(values) = parent_data["value"].as_array() {
+                            fetched_batch.extend(values.clone());
+                        }
+                    } else {
+                        let err_text = parent_res.text().await.unwrap_or_default();
+                        println!("Backend: Parent batch fetch failed: {}", err_text);
+                    }
+                }
+                
+                for parent_item in &fetched_batch {
+                    if let Some(id) = parent_item["id"].as_i64() {
+                        fetched_ids.insert(id);
+                    }
+                    if let Some(parent_parent_id) = parent_item["fields"]["System.Parent"].as_i64() {
+                        if !fetched_ids.contains(&parent_parent_id) {
+                            parents_to_fetch.insert(parent_parent_id);
+                        }
+                    }
+                }
+                
+                referenced_parents.extend(fetched_batch);
+            }
+
+            println!("Backend: Returning {} report items and {} parent items", all_results.len(), referenced_parents.len());
+            return Ok(serde_json::json!({
+                "items": all_results,
+                "parents": referenced_parents
+            }));
         }
-        Ok(serde_json::json!([]))
+        Ok(serde_json::json!({
+            "items": [],
+            "parents": []
+        }))
     } else {
         println!("Backend: Report WIQL request failed ({}): {}", status, text);
         Err(format!("Failed to fetch report items: {} - {}", status, text))

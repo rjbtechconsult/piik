@@ -1,15 +1,15 @@
 {
-  "version": "v0.3.3",
-  "notes": "Added Azure DevOps work item creation reports with CSV export.",
-  "pub_date": "2026-05-20T00:27:00.000Z",
+  "version": "v0.3.4",
+  "notes": "Added Story/Epic and Assignee filters to Reports CSV export, and added Closed Date column.",
+  "pub_date": "2026-06-24T09:51:00.000Z",
   "platforms": {
     "darwin-x86_64": {
-      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.3",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.3/Piik.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.4",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.4/Piik.dmg"
     },
     "darwin-aarch64": {
-      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.3",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.3/Piik.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.4",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.4/Piik.dmg"
     }
   }
 }
