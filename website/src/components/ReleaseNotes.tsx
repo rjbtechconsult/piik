@@ -13,10 +13,10 @@ export const ReleaseNotes: React.FC = () => {
            transition={{ duration: 0.5 }}
            style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
-          <span className="badge">v0.3.4 Update</span>
-          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Detailed Report Filtering & Export</h2>
+          <span className="badge">v0.3.5 Update</span>
+          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Automatic Iteration Sync</h2>
           <p style={{ margin: '0 auto', maxWidth: '600px' }}>
-            Introducing advanced filtering for work item reports. You can now filter exports by specific Stories/Epics and team Assignees, and track completion with the new Closed Date column.
+            Piik now automatically and silently refreshes your iterations from Azure DevOps when you open the window, instantly updating the dropdown list and active sprint selection.
           </p>
         </motion.div>
  
@@ -27,7 +27,7 @@ export const ReleaseNotes: React.FC = () => {
           maxWidth: '1100px',
           margin: '0 auto'
         }}>
-           {/* Card 1: Story & Epic Filtering */}
+           {/* Card 1: Instant Focus Sync */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -49,13 +49,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Story & Epic Filtering</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Instant Focus Sync</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Filter your reports dynamically in the UI and CSV downloads by selecting one or more parent User Stories, Backlog Items, or Epics worked on during the period.
+                Whenever you open Piik or the app window gains focus, it silently refreshes the iterations list and task hierarchy. No app restart required.
              </p>
            </motion.div>
  
-           {/* Card 2: Assignee Filtering */}
+           {/* Card 2: Auto-Switch Current Sprint */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -77,13 +77,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Sparkles size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Assignee Filtering</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Auto-Switch Current Sprint</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Narrow down your report list by individual team members (e.g. UX Engineering). Check workloads and export assignee-specific CSVs instantly.
+                If a new iteration is selected as current in Azure DevOps, Piik automatically detects the shift and updates your active view to it.
              </p>
            </motion.div>
  
-           {/* Card 3: Closed Date Column */}
+           {/* Card 3: Throttled Sync API */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -105,9 +105,9 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Closed Date Tracking</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Throttled Sync API</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Exported CSV files now include a dedicated Closed Date column immediately following Created Date to easily identify when tasks were completed.
+                Focus sync queries are throttled to once every 10 seconds, keeping Azure DevOps API usage low while ensuring your data stays fresh.
              </p>
            </motion.div>
         </div>
@@ -120,7 +120,7 @@ export const ReleaseNotes: React.FC = () => {
           style={{ marginTop: '4rem', textAlign: 'center' }}
         >
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            Latest Release: June 24, 2026
+            Latest Release: June 25, 2026
           </div>
         </motion.div>
       </div>

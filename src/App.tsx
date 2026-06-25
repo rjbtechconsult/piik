@@ -119,6 +119,7 @@ function App() {
   const lastWorkItemsRef = useRef<Record<number, string | null>>({});
   const appStartTimeRef = useRef<Date>(new Date());
   const isInitialLoadRef = useRef<boolean>(true);
+  const lastFetchTimeRef = useRef<number>(0);
 
   const isConnected = teams.length > 0;
 
@@ -371,6 +372,45 @@ function App() {
     }
   }, [selectedIteration]);
 
+  // Refresh iterations list and hierarchy silently when Piik is opened (window gets focus)
+  useEffect(() => {
+    const handleFocus = async () => {
+      const now = Date.now();
+      if (now - lastFetchTimeRef.current < 10000) return; // Throttling: limit to once every 10 seconds
+      lastFetchTimeRef.current = now;
+
+      if (!selectedTeam) return;
+
+      try {
+        console.log("App: Window focused. Refreshing iterations and hierarchy silently...");
+        const itData = await fetchIterations(true);
+        if (itData && itData.value) {
+          const newCurrent = itData.value.find((it: any) => it.attributes?.timeframe === "current");
+          let iterationChanged = false;
+
+          if (selectedIteration) {
+            const wasCurrent = selectedIteration.attributes?.timeframe === "current";
+            if (wasCurrent && newCurrent && newCurrent.id !== selectedIteration.id) {
+              setSelectedIteration(newCurrent);
+              iterationChanged = true;
+            }
+          }
+
+          if (!iterationChanged && selectedIteration) {
+            await fetchHierarchy(selectedIteration.id, true);
+          }
+        } else if (selectedIteration) {
+          await fetchHierarchy(selectedIteration.id, true);
+        }
+      } catch (err) {
+        console.error("App: Focus refresh failed:", err);
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [selectedTeam, selectedIteration]);
+
   const fetchTeams = async (silent = false) => {
     if (!silent) setIsLoading(true);
     try {
@@ -429,11 +469,20 @@ function App() {
       if (data.value && data.value.length > 0) {
         setIterations(data.value);
         const current = data.value.find((it: any) => it.attributes?.timeframe === "current");
-        if (current) {
-          setSelectedIteration(current);
-        } else {
-          setSelectedIteration(data.value[data.value.length - 1]);
-        }
+        
+        setSelectedIteration((prev: any) => {
+          if (prev) {
+            const match = data.value.find((it: any) => it.id === prev.id);
+            if (match) {
+              const wasCurrent = prev.attributes?.timeframe === "current";
+              if (wasCurrent && current && current.id !== prev.id) {
+                return current;
+              }
+              return match;
+            }
+          }
+          return current || data.value[data.value.length - 1];
+        });
       } else {
         setIterations([]);
         setSelectedIteration(null);

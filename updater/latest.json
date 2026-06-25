@@ -1,15 +1,15 @@
 {
-  "version": "v0.3.4",
-  "notes": "Added Story/Epic and Assignee filters to Reports CSV export, and added Closed Date column.",
-  "pub_date": "2026-06-24T09:51:00.000Z",
+  "version": "v0.3.5",
+  "notes": "Automatically recognize new current iterations from Azure DevOps on window focus.",
+  "pub_date": "2026-06-25T08:10:00.000Z",
   "platforms": {
     "darwin-x86_64": {
-      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.4",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.4/Piik.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.5",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.5/Piik.dmg"
     },
     "darwin-aarch64": {
-      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.4",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.4/Piik.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.5",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.5/Piik.dmg"
     }
   }
 }
