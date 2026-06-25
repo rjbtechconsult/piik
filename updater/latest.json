@@ -9,7 +9,7 @@
     },
     "darwin-aarch64": {
       "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.6",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.6/Piik.dmg"
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.6/Piik_0.3.6_aarch64.dmg"
     }
   }
 }
