@@ -13,10 +13,10 @@ export const ReleaseNotes: React.FC = () => {
            transition={{ duration: 0.5 }}
            style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
-          <span className="badge">v0.3.5 Update</span>
-          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Automatic Iteration Sync</h2>
+          <span className="badge">v0.3.6 Update</span>
+          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Work Item Creation Dates</h2>
           <p style={{ margin: '0 auto', maxWidth: '600px' }}>
-            Piik now automatically and silently refreshes your iterations from Azure DevOps when you open the window, instantly updating the dropdown list and active sprint selection.
+            Specify Start Date and End Date directly when creating Epics, Stories, Tasks, or Bugs in Piik. Plus, you can now create Epics directly from the quick-creation panel.
           </p>
         </motion.div>
  
@@ -27,7 +27,7 @@ export const ReleaseNotes: React.FC = () => {
           maxWidth: '1100px',
           margin: '0 auto'
         }}>
-           {/* Card 1: Instant Focus Sync */}
+           {/* Card 1: Start & End Dates */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -49,13 +49,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Instant Focus Sync</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Start & End Dates</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Whenever you open Piik or the app window gains focus, it silently refreshes the iterations list and task hierarchy. No app restart required.
+                Track timelines precisely by specifying Start and End dates during work item creation. The dates map directly to Azure's native scheduling fields.
              </p>
            </motion.div>
  
-           {/* Card 2: Auto-Switch Current Sprint */}
+           {/* Card 2: Root Epic Creation */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -77,13 +77,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Sparkles size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Auto-Switch Current Sprint</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Root Epic Creation</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                If a new iteration is selected as current in Azure DevOps, Piik automatically detects the shift and updates your active view to it.
+                Create Epics directly from the root creation view. The parent Epic dropdown dynamically hides when creating an Epic.
              </p>
            </motion.div>
  
-           {/* Card 3: Throttled Sync API */}
+           {/* Card 3: Date Picker Integration */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -105,9 +105,9 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Throttled Sync API</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Date Picker Integration</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Focus sync queries are throttled to once every 10 seconds, keeping Azure DevOps API usage low while ensuring your data stays fresh.
+                Inputs are natively integrated into the dark-mode, glassmorphic UI, allowing you to select dates with a native calendar popover.
              </p>
            </motion.div>
         </div>

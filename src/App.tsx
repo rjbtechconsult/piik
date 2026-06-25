@@ -771,7 +771,7 @@ function App() {
     }
   };
 
-  const handleCreateWorkItem = async (title: string, type: string, assigneeUniqueName: string, parentId?: number, areaPath?: string, status?: string) => {
+  const handleCreateWorkItem = async (title: string, type: string, assigneeUniqueName: string, parentId?: number, areaPath?: string, status?: string, startDate?: string, endDate?: string) => {
     try {
       const org = await getSetting("azure_org") || localStorage.getItem("azure_org");
       const project = await getSetting("azure_project") || localStorage.getItem("azure_project");
@@ -790,7 +790,9 @@ function App() {
         iterationPath: selectedIteration?.path || null,
         areaPath: areaPath || teamSettings.defaultAreaPath || null,
         parentId: parentId || null,
-        status: status || null
+        status: status || null,
+        startDate: startDate || null,
+        endDate: endDate || null
       });
 
       fetchHierarchy();

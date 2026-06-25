@@ -508,16 +508,19 @@ async fn create_azure_work_item(
     area_path: Option<String>,
     parent_id: Option<i32>,
     status: Option<String>,
+    start_date: Option<String>,
+    end_date: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let org = organization.trim().trim_end_matches("/");
     let proj = project.trim().trim_end_matches("/");
     let base_url = get_base_url(org);
     
-    // Support User Story (URL encoded space), Task, and Bug
+    // Support User Story (URL encoded space), Task, Bug, and Epic
     let sanitized_type = match item_type.to_lowercase().as_str() {
         "bug" => "Bug",
         "user story" | "userstory" => "User%20Story",
         "story" => "Story",
+        "epic" => "Epic",
         _ => "Task",
     };
     
@@ -532,6 +535,26 @@ async fn create_azure_work_item(
             "value": title
         })
     ];
+
+    if let Some(ref s_date) = start_date {
+        if !s_date.trim().is_empty() {
+            patch.push(serde_json::json!({
+                "op": "add",
+                "path": "/fields/Microsoft.VSTS.Scheduling.StartDate",
+                "value": s_date
+            }));
+        }
+    }
+
+    if let Some(ref e_date) = end_date {
+        if !e_date.trim().is_empty() {
+            patch.push(serde_json::json!({
+                "op": "add",
+                "path": "/fields/Microsoft.VSTS.Scheduling.TargetDate",
+                "value": e_date
+            }));
+        }
+    }
 
     if let Some(user) = assignee {
         if !user.trim().is_empty() {
