@@ -6,7 +6,7 @@ const featuresList = [
   {
     icon: <Zap size={24} className="text-gradient-accent" />,
     title: "Always Accessible",
-    description: "Live inside your native macOS Menu Bar. One click or a hotkey brings up your entire work context."
+    description: "Live inside your native Menu Bar (macOS) or System Tray (Windows). One click or a hotkey brings up your entire work context."
   },
   {
     icon: <Fingerprint size={24} className="text-gradient-accent" />,
