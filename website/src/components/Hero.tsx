@@ -24,7 +24,8 @@ export const Hero: React.FC = () => {
           setLatestVersion(data.tag_name);
         }
         if (data && data.assets) {
-          const dmgAsset = data.assets.find((asset: any) => asset.name.endsWith('.dmg'));
+          const dmgAsset = data.assets.find((asset: any) => asset.name.endsWith('.dmg') && asset.name !== 'Piik.dmg')
+            || data.assets.find((asset: any) => asset.name.endsWith('.dmg'));
           const exeAsset = data.assets.find((asset: any) => asset.name.endsWith('.exe'));
           
           if (dmgAsset) {
