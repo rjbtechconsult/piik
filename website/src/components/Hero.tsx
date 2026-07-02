@@ -98,16 +98,16 @@ export const Hero: React.FC = () => {
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <a href={macDownloadUrl} className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}>
-            <svg viewBox="0 0 384 512" width="20" height="20" fill="currentColor" style={{ marginRight: '0.25rem' }}>
+            Download for
+            <svg viewBox="0 0 384 512" width="20" height="20" fill="currentColor">
               <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-48.7-22.9-77-22.9-37.9 0-76.9 22-97.4 58.2-39.7 70.3-10.2 173.2 28.3 229.2 19 27.5 41 57.5 70.5 56.4 28.1-1.1 38.8-18.2 71.1-18.2 32.1 0 42.1 18.2 71.2 18.2 30.3 0 50.1-27.2 69-54.8 21.8-31.7 30.7-62.6 31.1-64.2-1-1.2-59.8-23-60-84.7zM249.2 88.5c19-23.3 31.7-55.4 27.5-88.5-28.2 1.1-62.8 19-83 42.4-17.2 19.5-32.3 52.1-27.8 84.7 31.3 2.5 64.3-15.3 83.3-38.6z"/>
             </svg>
-            macOS (.dmg)
           </a>
           <a href={winDownloadUrl} className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem', background: 'linear-gradient(135deg, #0078d4 0%, #005a9e 100%)', boxShadow: '0 4px 14px rgba(0, 120, 212, 0.4)' }}>
-            <svg viewBox="0 0 448 512" width="18" height="18" fill="currentColor" style={{ marginRight: '0.25rem' }}>
+            Download for
+            <svg viewBox="0 0 448 512" width="18" height="18" fill="currentColor">
               <path d="M0 93.7l183.6-25.3v177.4H0V93.7zm0 324.6l183.6 25.3V268.4H0v149.9zm203.8 28.1L448 480V268.4H203.8v178zm0-380.6v177.4H448V32L203.8 65.8z"/>
             </svg>
-            Windows (.exe)
           </a>
           <a href="#features" className="btn btn-secondary" style={{ padding: '1rem 2rem', fontSize: '1.1rem', backgroundColor: 'transparent', border: 'none', gap: '0.25rem' }}>
             View Features <ChevronRight size={20} />
