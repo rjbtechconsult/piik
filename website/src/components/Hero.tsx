@@ -32,9 +32,10 @@ export const Hero: React.FC = () => {
           }
           if (exeAsset) {
             setWinDownloadUrl(exeAsset.browser_download_url);
-          } else {
-            // Fallback to general releases page if Windows exe is not yet compiled for the latest release
-            setWinDownloadUrl('https://github.com/rjbtechconsult/piik/releases');
+          } else if (data.tag_name) {
+            // Fall back to the constructed direct download link for the latest tag name
+            const versionNum = data.tag_name.replace(/^v/, '');
+            setWinDownloadUrl(`https://github.com/rjbtechconsult/piik/releases/download/${data.tag_name}/Piik_${versionNum}_x64-setup.exe`);
           }
         }
       })
