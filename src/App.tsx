@@ -180,6 +180,13 @@ function App() {
     loadNotificationSettings();
     fetchCurrentUser();
 
+    // Focus the OS window on user interaction to ensure inputs receive keyboard focus on Windows
+    const handleFocusWindow = () => {
+      invoke("focus_window").catch((err) => console.error("App: Failed to focus window:", err));
+    };
+    document.addEventListener("mousedown", handleFocusWindow);
+    document.addEventListener("focusin", handleFocusWindow);
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
       if (theme === 'system') {
@@ -187,7 +194,11 @@ function App() {
       }
     };
     mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+      document.removeEventListener("mousedown", handleFocusWindow);
+      document.removeEventListener("focusin", handleFocusWindow);
+    };
   }, []);
 
   const loadTheme = async () => {
