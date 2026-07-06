@@ -34,6 +34,10 @@ const updateData = {
     "darwin-aarch64": {
       signature: signature,
       url: assetUrl
+    },
+    "windows-x86_64": {
+      signature: signature,
+      url: assetUrl.replace('_aarch64.dmg', '_x64-setup.nsis.zip').replace('.dmg', '_x64-setup.nsis.zip')
     }
   }
 };
