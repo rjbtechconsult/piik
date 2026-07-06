@@ -42,7 +42,7 @@ const updateData = {
   }
 };
 
-const outputPath = path.join(process.cwd(), 'updater', 'latest.json');
+const outputPath = path.join(process.cwd(), 'website', 'public', 'updater', 'latest.json');
 if (!fs.existsSync(path.dirname(outputPath))) {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 }
