@@ -1,19 +1,19 @@
 {
-  "version": "v0.3.6",
-  "notes": "Add Start Date and End Date capabilities during Epic, Story, Task, or Bug creation.",
-  "pub_date": "2026-06-25T16:10:00.000Z",
+  "version": "v0.3.7",
+  "notes": "Add Lead Time and Cycle Time metrics to reports, item-level badges, and calculated CSV export columns.",
+  "pub_date": "2026-07-08T08:45:00.000Z",
   "platforms": {
     "darwin-x86_64": {
-      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.6",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.6/Piik.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.7",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik.dmg"
     },
     "darwin-aarch64": {
-      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.6",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.6/Piik_0.3.6_aarch64.dmg"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.7",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_0.3.7_aarch64.dmg"
     },
     "windows-x86_64": {
-      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.6_WINDOWS",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.6/Piik_0.3.6_x64-setup.nsis.zip"
+      "signature": "PLACEHOLDER_SIGNATURE_FOR_V0.3.7_WINDOWS",
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_0.3.7_x64-setup.nsis.zip"
     }
   }
 }

@@ -1049,6 +1049,7 @@ async fn fetch_report_work_items(
                         "System.AreaPath",
                         "System.IterationPath",
                         "System.Parent",
+                        "Microsoft.VSTS.Common.ActivatedDate",
                         "Microsoft.VSTS.Common.ClosedDate"
                     ]
                 });

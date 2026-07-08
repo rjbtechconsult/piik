@@ -27,6 +27,25 @@ const getAssigneeName = (assignedTo: any): string => {
   return assignedTo.displayName || assignedTo.uniqueName || "Unassigned";
 };
 
+const formatDuration = (ms: number): string => {
+  if (ms < 0) return "0m";
+  const minutes = Math.floor(ms / (1000 * 60));
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = (ms / (1000 * 60 * 60 * 24)).toFixed(1);
+  return `${days}d`;
+};
+
+const formatAvgDuration = (ms: number): string => {
+  const days = ms / (1000 * 60 * 60 * 24);
+  if (days < 0.1) {
+    const hours = ms / (1000 * 60 * 60);
+    return `${hours.toFixed(1)}h`;
+  }
+  return `${days.toFixed(1)}d`;
+};
+
 interface InitiativeSelectorProps {
   items: any[];
   selectedIds: number[];
@@ -346,6 +365,10 @@ export function Reports({ organization, project, token, selectedTeam, defaultAre
     let epicsCount = 0;
     let storiesCount = 0;
     let tasksCount = 0;
+    let completedCountForLead = 0;
+    let completedCountForCycle = 0;
+    let totalLeadTimeMs = 0;
+    let totalCycleTimeMs = 0;
 
     filteredItems.forEach((item) => {
       if (!item?.fields) return;
@@ -363,13 +386,42 @@ export function Reports({ organization, project, token, selectedTeam, defaultAre
       } else if (type === "Task" || type === "Bug") {
         tasksCount++;
       }
+
+      const closedDateStr = item.fields["Microsoft.VSTS.Common.ClosedDate"];
+      const createdDateStr = item.fields["System.CreatedDate"];
+      const activatedDateStr = item.fields["Microsoft.VSTS.Common.ActivatedDate"];
+
+      if (closedDateStr) {
+        const closedDate = new Date(closedDateStr);
+        if (createdDateStr) {
+          const createdDate = new Date(createdDateStr);
+          const leadTime = closedDate.getTime() - createdDate.getTime();
+          if (leadTime >= 0) {
+            totalLeadTimeMs += leadTime;
+            completedCountForLead++;
+          }
+        }
+        if (activatedDateStr) {
+          const activatedDate = new Date(activatedDateStr);
+          const cycleTime = closedDate.getTime() - activatedDate.getTime();
+          if (cycleTime >= 0) {
+            totalCycleTimeMs += cycleTime;
+            completedCountForCycle++;
+          }
+        }
+      }
     });
+
+    const avgLeadTime = completedCountForLead > 0 ? totalLeadTimeMs / completedCountForLead : null;
+    const avgCycleTime = completedCountForCycle > 0 ? totalCycleTimeMs / completedCountForCycle : null;
 
     return {
       epics: epicsCount,
       stories: storiesCount,
       tasks: tasksCount,
       total: filteredItems.length,
+      avgLeadTime,
+      avgCycleTime,
     };
   }, [filteredItems]);
 
@@ -417,7 +469,7 @@ export function Reports({ organization, project, token, selectedTeam, defaultAre
     };
 
     // Header row
-    let csvContent = "ID,Title,Work Item Type,State,Created Date,Closed Date,Created By,Assigned To,Area Path\n";
+    let csvContent = "ID,Title,Work Item Type,State,Created Date,Activated Date,Closed Date,Lead Time (Days),Cycle Time (Days),Created By,Assigned To,Area Path\n";
 
     // Data rows
     itemsToExport.forEach((item) => {
@@ -426,12 +478,31 @@ export function Reports({ organization, project, token, selectedTeam, defaultAre
       const title = fields["System.Title"] || "";
       const type = fields["System.WorkItemType"] || "";
       const state = fields["System.State"] || "";
-      const createdDate = fields["System.CreatedDate"]
-        ? new Date(fields["System.CreatedDate"]).toLocaleDateString()
-        : "";
-      const closedDate = fields["Microsoft.VSTS.Common.ClosedDate"]
-        ? new Date(fields["Microsoft.VSTS.Common.ClosedDate"]).toLocaleDateString()
-        : "";
+      
+      const createdDateObj = fields["System.CreatedDate"] ? new Date(fields["System.CreatedDate"]) : null;
+      const activatedDateObj = fields["Microsoft.VSTS.Common.ActivatedDate"] ? new Date(fields["Microsoft.VSTS.Common.ActivatedDate"]) : null;
+      const closedDateObj = fields["Microsoft.VSTS.Common.ClosedDate"] ? new Date(fields["Microsoft.VSTS.Common.ClosedDate"]) : null;
+
+      const createdDateStr = createdDateObj ? createdDateObj.toLocaleDateString() : "";
+      const activatedDateStr = activatedDateObj ? activatedDateObj.toLocaleDateString() : "";
+      const closedDateStr = closedDateObj ? closedDateObj.toLocaleDateString() : "";
+
+      let leadTimeDays = "";
+      if (createdDateObj && closedDateObj) {
+        const diff = closedDateObj.getTime() - createdDateObj.getTime();
+        if (diff >= 0) {
+          leadTimeDays = (diff / (1000 * 60 * 60 * 24)).toFixed(2);
+        }
+      }
+
+      let cycleTimeDays = "";
+      if (activatedDateObj && closedDateObj) {
+        const diff = closedDateObj.getTime() - activatedDateObj.getTime();
+        if (diff >= 0) {
+          cycleTimeDays = (diff / (1000 * 60 * 60 * 24)).toFixed(2);
+        }
+      }
+
       const creator = getAssigneeName(fields["System.CreatedBy"]);
       const assignee = getAssigneeName(fields["System.AssignedTo"]);
       const areaPath = fields["System.AreaPath"] || "";
@@ -441,8 +512,11 @@ export function Reports({ organization, project, token, selectedTeam, defaultAre
         escapeCSV(title),
         escapeCSV(type),
         escapeCSV(state),
-        escapeCSV(createdDate),
-        escapeCSV(closedDate),
+        escapeCSV(createdDateStr),
+        escapeCSV(activatedDateStr),
+        escapeCSV(closedDateStr),
+        escapeCSV(leadTimeDays),
+        escapeCSV(cycleTimeDays),
         escapeCSV(creator),
         escapeCSV(assignee),
         escapeCSV(areaPath)
@@ -603,6 +677,28 @@ export function Reports({ organization, project, token, selectedTeam, defaultAre
             ))}
           </div>
 
+          {/* Timing Metrics Row */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-[var(--card-bg-subtle)] border border-[var(--border-main)] rounded-xl p-2 flex items-center justify-between px-3">
+              <div>
+                <div className="text-[7px] font-bold text-[var(--text-dim)] uppercase tracking-wider">Avg Lead Time</div>
+                <div className="text-[9px] text-[var(--text-muted)] font-medium mt-0.5">Created → Closed</div>
+              </div>
+              <div className="text-[14px] font-black text-[var(--text-main)]">
+                {summary.avgLeadTime !== null ? formatAvgDuration(summary.avgLeadTime) : "N/A"}
+              </div>
+            </div>
+            <div className="bg-[var(--card-bg-subtle)] border border-[var(--border-main)] rounded-xl p-2 flex items-center justify-between px-3">
+              <div>
+                <div className="text-[7px] font-bold text-[var(--text-dim)] uppercase tracking-wider">Avg Cycle Time</div>
+                <div className="text-[9px] text-[var(--text-muted)] font-medium mt-0.5">Started → Closed</div>
+              </div>
+              <div className="text-[14px] font-black text-[var(--text-main)]">
+                {summary.avgCycleTime !== null ? formatAvgDuration(summary.avgCycleTime) : "N/A"}
+              </div>
+            </div>
+          </div>
+
           {/* Action Row */}
           {filteredItems.length > 0 && (
             <div className="flex items-center justify-between pt-1">
@@ -677,6 +773,35 @@ export function Reports({ organization, project, token, selectedTeam, defaultAre
                     <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--app-bg-solid)] border border-[var(--border-subtle)] px-1.5 py-0.5 rounded">
                       {state}
                     </span>
+                    {/* Timing Badge */}
+                    {(() => {
+                      const closedDateStr = fields["Microsoft.VSTS.Common.ClosedDate"];
+                      const createdDateStr = fields["System.CreatedDate"];
+                      const activatedDateStr = fields["Microsoft.VSTS.Common.ActivatedDate"];
+
+                      if (!closedDateStr) return null;
+
+                      const closed = new Date(closedDateStr);
+                      const created = createdDateStr ? new Date(createdDateStr) : null;
+                      const activated = activatedDateStr ? new Date(activatedDateStr) : null;
+
+                      const leadTime = created ? closed.getTime() - created.getTime() : null;
+                      const cycleTime = activated ? closed.getTime() - activated.getTime() : null;
+
+                      if (leadTime === null || leadTime < 0) return null;
+
+                      return (
+                        <div className="flex items-center gap-1 text-[7px] text-[var(--text-dim)] font-bold bg-[var(--app-bg-solid)] px-1 py-0.2 rounded border border-[var(--border-subtle)] leading-none select-none">
+                          <span title="Lead Time (Created to Closed)">L: {formatDuration(leadTime)}</span>
+                          {cycleTime !== null && cycleTime >= 0 && (
+                            <>
+                              <span className="text-[var(--border-subtle)]">•</span>
+                              <span title="Cycle Time (Started to Closed)">C: {formatDuration(cycleTime)}</span>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               );

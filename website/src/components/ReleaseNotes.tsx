@@ -13,10 +13,10 @@ export const ReleaseNotes: React.FC = () => {
            transition={{ duration: 0.5 }}
            style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
-          <span className="badge">v0.3.6 Update</span>
-          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Work Item Creation Dates</h2>
+          <span className="badge">v0.3.7 Update</span>
+          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Lead & Cycle Time Metrics</h2>
           <p style={{ margin: '0 auto', maxWidth: '600px' }}>
-            Specify Start Date and End Date directly when creating Epics, Stories, Tasks, or Bugs in Piik. Plus, you can now create Epics directly from the quick-creation panel.
+            Track and analyze your team's workflow efficiency directly from the reporting screen. Calculate Lead Time and Cycle Time to measure development velocity.
           </p>
         </motion.div>
  
@@ -27,7 +27,7 @@ export const ReleaseNotes: React.FC = () => {
           maxWidth: '1100px',
           margin: '0 auto'
         }}>
-           {/* Card 1: Start & End Dates */}
+           {/* Card 1: Avg Lead & Cycle Times */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -49,13 +49,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Start & End Dates</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Avg Lead & Cycle Times</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Track timelines precisely by specifying Start and End dates during work item creation. The dates map directly to Azure's native scheduling fields.
+                KPI cards display average Lead Time (Created to Closed) and Cycle Time (Started to Closed) for all completed work items in the selected range.
              </p>
            </motion.div>
  
-           {/* Card 2: Root Epic Creation */}
+           {/* Card 2: Item-Level Timing Badges */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -77,13 +77,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Sparkles size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Root Epic Creation</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Item-Level Timing Badges</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Create Epics directly from the root creation view. The parent Epic dropdown dynamically hides when creating an Epic.
+                View exact completion times for each individual task directly in the report list with color-coded L (Lead) and C (Cycle) badges.
              </p>
            </motion.div>
  
-           {/* Card 3: Date Picker Integration */}
+           {/* Card 3: Calculated CSV Columns */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -105,9 +105,9 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Date Picker Integration</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Calculated CSV Columns</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Inputs are natively integrated into the dark-mode, glassmorphic UI, allowing you to select dates with a native calendar popover.
+                Export reports to CSV with raw Activated Date, Lead Time (Days), and Cycle Time (Days) decimal fields for custom analysis.
              </p>
            </motion.div>
         </div>
@@ -120,7 +120,7 @@ export const ReleaseNotes: React.FC = () => {
           style={{ marginTop: '4rem', textAlign: 'center' }}
         >
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            Latest Release: June 25, 2026
+            Latest Release: July 8, 2026
           </div>
         </motion.div>
       </div>
