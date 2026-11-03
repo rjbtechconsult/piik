@@ -13,10 +13,10 @@ export const ReleaseNotes: React.FC = () => {
            transition={{ duration: 0.5 }}
            style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
-          <span className="badge">v0.3.7 Update</span>
-          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>Lead & Cycle Time Metrics</h2>
+          <span className="badge">v0.3.8 Update</span>
+          <h2 className="text-gradient" style={{ marginBottom: '1rem' }}>macOS 27 Compatibility & Tray Improvements</h2>
           <p style={{ margin: '0 auto', maxWidth: '600px' }}>
-            Track and analyze your team's workflow efficiency directly from the reporting screen. Calculate Lead Time and Cycle Time to measure development velocity.
+            Full compatibility with macOS 27 Golden Gate, restored menu bar tray click interactions, quick-action drawer opening, and Spotlight reopen handling.
           </p>
         </motion.div>
  
@@ -27,7 +27,7 @@ export const ReleaseNotes: React.FC = () => {
           maxWidth: '1100px',
           margin: '0 auto'
         }}>
-           {/* Card 1: Avg Lead & Cycle Times */}
+           {/* Card 1: macOS 27 Compatibility */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -49,13 +49,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Avg Lead & Cycle Times</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>macOS 27 Scene Support</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                KPI cards display average Lead Time (Created to Closed) and Cycle Time (Started to Closed) for all completed work items in the selected range.
+                Seamless integration with macOS 27 Golden Gate's unified status bar architecture, ensuring tray click events correctly toggle the application window.
              </p>
            </motion.div>
  
-           {/* Card 2: Item-Level Timing Badges */}
+           {/* Card 2: Enhanced Tray Menu */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -77,13 +77,13 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Sparkles size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Item-Level Timing Badges</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Enhanced Tray Context Menu</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                View exact completion times for each individual task directly in the report list with color-coded L (Lead) and C (Cycle) badges.
+                Context menu now includes a direct "Open Piik" option alongside Quit to guarantee instantaneous access to your Azure DevOps dashboard at all times.
              </p>
            </motion.div>
  
-           {/* Card 3: Calculated CSV Columns */}
+           {/* Card 3: Spotlight & Dock Reopen */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
@@ -105,9 +105,9 @@ export const ReleaseNotes: React.FC = () => {
              }}>
                 <Zap size={24} />
              </div>
-             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Calculated CSV Columns</h3>
+             <h3 style={{ marginBottom: '1rem', color: 'white', fontSize: '1.1rem' }}>Spotlight & Finder Reopen</h3>
              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                Export reports to CSV with raw Activated Date, Lead Time (Days), and Cycle Time (Days) decimal fields for custom analysis.
+                Searching for and launching Piik from Spotlight or Applications while running in the background automatically opens and focuses the drawer.
              </p>
            </motion.div>
         </div>
@@ -120,7 +120,7 @@ export const ReleaseNotes: React.FC = () => {
           style={{ marginTop: '4rem', textAlign: 'center' }}
         >
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            Latest Release: July 8, 2026
+            Latest Release: November 3, 2026
           </div>
         </motion.div>
       </div>

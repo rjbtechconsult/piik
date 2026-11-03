@@ -1225,11 +1225,13 @@ pub fn run() {
         ))
         .setup(|app| {
             println!("Backend: Piik is starting up... (Check your Menu Bar for the lightning bolt icon)");
-            use tauri::menu::{Menu, MenuItem};
+            use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
             use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 
+            let open_i = MenuItem::with_id(app, "open", "Open Piik", true, None::<&str>)?;
+            let sep_i = PredefinedMenuItem::separator(app)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&quit_i])?;
+            let menu = Menu::with_items(app, &[&open_i, &sep_i, &quit_i])?;
 
             let tray_icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray-icon.png"))?;
             let _tray = TrayIconBuilder::with_id("tray")
@@ -1262,6 +1264,12 @@ pub fn run() {
                 .on_menu_event(|app, event| {
                     if event.id == "quit" {
                         app.exit(0);
+                    } else if event.id == "open" {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.move_window(Position::TrayCenter);
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
                     }
                 })
                 .build(app)?;
@@ -1290,8 +1298,18 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![greet, focus_window, get_token, set_token, delete_token, fetch_azure_tasks, fetch_azure_teams, fetch_azure_hierarchy, fetch_azure_iterations, fetch_azure_team_settings, update_azure_item_status, update_azure_item_title, update_azure_item_parent, fetch_team_members, create_azure_work_item, update_tray_badge, identify_me, fetch_work_item_states, fetch_azure_epics, debug_azure_types, fetch_report_work_items])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = event {
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let _ = window.move_window(Position::TrayCenter);
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+        });
 }
 
 #[cfg(target_os = "macos")]

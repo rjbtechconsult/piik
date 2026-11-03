@@ -1,35 +1,35 @@
 {
-  "version": "0.3.7",
-  "notes": "Add Lead Time and Cycle Time metrics to reports, item-level badges, and calculated CSV export columns.",
-  "pub_date": "2026-07-09T13:24:57.958Z",
+  "version": "0.3.8",
+  "notes": "macOS 27 Golden Gate compatibility update: restores menu bar tray click behavior, adds Open Piik context menu item, and Spotlight reopen handling.",
+  "pub_date": "2026-11-03T05:00:00.000Z",
   "platforms": {
     "darwin-x86_64": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZ1M1OWdlazJhcWljeDltNEt2OEtJbFhDejFQVkhKeEp4Tk5qbTBkUTEzelo2bEptcXFNMGhVUG85U1RMR0ExVnZnWXZONmgwRkFjWWtib0VMM0VLOFhIOGFsTzExdFE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjAzMTEwCWZpbGU6UGlpay5hcHAudGFyLmd6Ck5BKzhTbkIxdUhuMERKTzY1S0NHc1ZVcHo4RmxWcnovc2RyVk9SMWgvQTBiSW53Z1JwN3JvRWpxRkdXZ0NSY1pGajMvT1hyRUFuUStveTNJYW8yK0NnPT0K",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_x64.app.tar.gz"
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_x64.app.tar.gz"
     },
     "darwin-x86_64-app": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZ1M1OWdlazJhcWljeDltNEt2OEtJbFhDejFQVkhKeEp4Tk5qbTBkUTEzelo2bEptcXFNMGhVUG85U1RMR0ExVnZnWXZONmgwRkFjWWtib0VMM0VLOFhIOGFsTzExdFE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjAzMTEwCWZpbGU6UGlpay5hcHAudGFyLmd6Ck5BKzhTbkIxdUhuMERKTzY1S0NHc1ZVcHo4RmxWcnovc2RyVk9SMWgvQTBiSW53Z1JwN3JvRWpxRkdXZ0NSY1pGajMvT1hyRUFuUStveTNJYW8yK0NnPT0K",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_x64.app.tar.gz"
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_x64.app.tar.gz"
     },
     "darwin-aarch64": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZ1M1OWdlazJhcXNvV1JmU0tmV1ZCREIzbEtzbVhsbEJHelM2UzlVRVArQzZHVWx3dUlkaHNnaEF6dkhvNVg0ajJpTGhvelFoTjkzaXdnYi91dTVhNGJsYUo5TDc4cUFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjAzMjc1CWZpbGU6UGlpay5hcHAudGFyLmd6CndnZ2NLeVoxKzRvVG9ITUF4QXo0b1NPWFBzaXJhZEV2QW5teXJJenJZb0k0L0dXdlI2R0VKRkZhRkI2WHQ4U1BuQUxTVkttaTYxSkZxUHdza09jcEF3PT0K",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_aarch64.app.tar.gz"
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_aarch64.app.tar.gz"
     },
     "darwin-aarch64-app": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZ1M1OWdlazJhcXNvV1JmU0tmV1ZCREIzbEtzbVhsbEJHelM2UzlVRVArQzZHVWx3dUlkaHNnaEF6dkhvNVg0ajJpTGhvelFoTjkzaXdnYi91dTVhNGJsYUo5TDc4cUFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjAzMjc1CWZpbGU6UGlpay5hcHAudGFyLmd6CndnZ2NLeVoxKzRvVG9ITUF4QXo0b1NPWFBzaXJhZEV2QW5teXJJenJZb0k0L0dXdlI2R0VKRkZhRkI2WHQ4U1BuQUxTVkttaTYxSkZxUHdza09jcEF3PT0K",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_aarch64.app.tar.gz"
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_aarch64.app.tar.gz"
     },
     "windows-x86_64": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZ1M1OWdlazJhcXRCZEVPcWdPMTBPZ3h0dnFLUjN1MG1hQllocTMySk9uMUgxTkZPL2ROUVpVVnJQY1BWaUc4akdkVy9NT0F6RkI5dTlmUzdNZk5jcUIyVGlaeUZyNkE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjAzNDk0CWZpbGU6UGlpa18wLjMuN194NjRfZW4tVVMubXNpClg4SklhMytaNDM0V2pyc3IvbUdBOE5WMFFsek9WaGJTZ2tRZFlpN0RwaEpEc2FONHN5dVdJcVpKa0FzVkd5U1pjTlYvbjZNU3dQOXNPcXQyZnJIK0JBPT0K",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_0.3.7_x64_en-US.msi"
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_0.3.8_x64_en-US.msi"
     },
     "windows-x86_64-msi": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZ1M1OWdlazJhcXRCZEVPcWdPMTBPZ3h0dnFLUjN1MG1hQllocTMySk9uMUgxTkZPL2ROUVpVVnJQY1BWaUc4akdkVy9NT0F6RkI5dTlmUzdNZk5jcUIyVGlaeUZyNkE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjAzNDk0CWZpbGU6UGlpa18wLjMuN194NjRfZW4tVVMubXNpClg4SklhMytaNDM0V2pyc3IvbUdBOE5WMFFsek9WaGJTZ2tRZFlpN0RwaEpEc2FONHN5dVdJcVpKa0FzVkd5U1pjTlYvbjZNU3dQOXNPcXQyZnJIK0JBPT0K",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_0.3.7_x64_en-US.msi"
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_0.3.8_x64_en-US.msi"
     },
     "windows-x86_64-nsis": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZ1M1OWdlazJhcWtmSHBHNUpKV3psSUpDd0JGckFyVExiMUpnQno2UldFODlQMHNOSE5zWWwvelJzcDJtQWEvSE1ZOTdJRldNQ29oRWdrQnFvcWZTY1RDREhQVVI5bnc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjAzNDk0CWZpbGU6UGlpa18wLjMuN194NjQtc2V0dXAuZXhlCmY0L3Vlbm9RWHhRa2llOVRoZ2NXY25yUFRmbnNYNWo4Z2RnRExpcHRFQVpoekIzQks0Mnp3dEZDdUUrMXpUTys4UGo1SGYvcmdTaTZDVGxlckp2eUR3PT0K",
-      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_0.3.7_x64-setup.exe"
+      "url": "https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_0.3.8_x64-setup.exe"
     }
   }
 }

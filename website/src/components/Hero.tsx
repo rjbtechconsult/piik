@@ -3,17 +3,17 @@ import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const Hero: React.FC = () => {
-  const [latestVersion, setLatestVersion] = React.useState('v0.3.7');
-  const [macDownloadUrl, setMacDownloadUrl] = React.useState('https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_0.3.7_aarch64.dmg');
-  const [winDownloadUrl, setWinDownloadUrl] = React.useState('https://github.com/rjbtechconsult/piik/releases/download/v0.3.7/Piik_0.3.7_x64-setup.exe');
+  const [latestVersion, setLatestVersion] = React.useState('v0.3.8');
+  const [macDownloadUrl, setMacDownloadUrl] = React.useState('https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_0.3.8_aarch64.dmg');
+  const [winDownloadUrl, setWinDownloadUrl] = React.useState('https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_0.3.8_x64-setup.exe');
 
   React.useEffect(() => {
     // Check for mock parameter for local testing
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('mock') === 'true') {
-      setLatestVersion('v0.3.7-mock');
-      setMacDownloadUrl('/Piik_0.3.7_aarch64.dmg');
-      setWinDownloadUrl('/Piik_0.3.7_x64-setup.exe');
+      setLatestVersion('v0.3.8-mock');
+      setMacDownloadUrl('/Piik_0.3.8_aarch64.dmg');
+      setWinDownloadUrl('/Piik_0.3.8_x64-setup.exe');
       return;
     }
 
