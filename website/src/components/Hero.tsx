@@ -2,10 +2,30 @@ import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const CURRENT_VERSION = 'v0.3.8';
+const DEFAULT_MAC_URL = `https://github.com/rjbtechconsult/piik/releases/download/${CURRENT_VERSION}/Piik_0.3.8_aarch64.dmg`;
+const DEFAULT_WIN_URL = `https://github.com/rjbtechconsult/piik/releases/download/${CURRENT_VERSION}/Piik_0.3.8_x64-setup.exe`;
+
+const parseSemVer = (versionStr: string): number[] => {
+  return versionStr.replace(/^v/, '').split('.').map((p) => parseInt(p, 10) || 0);
+};
+
+const isNewerOrEqual = (candidate: string, current: string): boolean => {
+  const c = parseSemVer(candidate);
+  const cur = parseSemVer(current);
+  for (let i = 0; i < Math.max(c.length, cur.length); i++) {
+    const cPart = c[i] ?? 0;
+    const curPart = cur[i] ?? 0;
+    if (cPart > curPart) return true;
+    if (cPart < curPart) return false;
+  }
+  return true;
+};
+
 export const Hero: React.FC = () => {
-  const [latestVersion, setLatestVersion] = React.useState('v0.3.8');
-  const [macDownloadUrl, setMacDownloadUrl] = React.useState('https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_0.3.8_aarch64.dmg');
-  const [winDownloadUrl, setWinDownloadUrl] = React.useState('https://github.com/rjbtechconsult/piik/releases/download/v0.3.8/Piik_0.3.8_x64-setup.exe');
+  const [latestVersion, setLatestVersion] = React.useState(CURRENT_VERSION);
+  const [macDownloadUrl, setMacDownloadUrl] = React.useState(DEFAULT_MAC_URL);
+  const [winDownloadUrl, setWinDownloadUrl] = React.useState(DEFAULT_WIN_URL);
 
   React.useEffect(() => {
     // Check for mock parameter for local testing
@@ -20,23 +40,24 @@ export const Hero: React.FC = () => {
     fetch('https://api.github.com/repos/rjbtechconsult/piik/releases/latest')
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.tag_name) {
+        // Only update if GitHub's release is newer than or equal to our current version
+        if (data && data.tag_name && isNewerOrEqual(data.tag_name, CURRENT_VERSION)) {
           setLatestVersion(data.tag_name);
-        }
-        if (data && data.assets) {
-          const dmgAsset = data.assets.find((asset: any) => asset.name.endsWith('.dmg') && asset.name !== 'Piik.dmg')
-            || data.assets.find((asset: any) => asset.name.endsWith('.dmg'));
-          const exeAsset = data.assets.find((asset: any) => asset.name.endsWith('.exe'));
-          
-          if (dmgAsset) {
-            setMacDownloadUrl(dmgAsset.browser_download_url);
-          }
-          if (exeAsset) {
-            setWinDownloadUrl(exeAsset.browser_download_url);
-          } else if (data.tag_name) {
-            // Fall back to the constructed direct download link for the latest tag name
-            const versionNum = data.tag_name.replace(/^v/, '');
-            setWinDownloadUrl(`https://github.com/rjbtechconsult/piik/releases/download/${data.tag_name}/Piik_${versionNum}_x64-setup.exe`);
+
+          if (data.assets) {
+            const dmgAsset = data.assets.find((asset: any) => asset.name.endsWith('.dmg') && asset.name !== 'Piik.dmg')
+              || data.assets.find((asset: any) => asset.name.endsWith('.dmg'));
+            const exeAsset = data.assets.find((asset: any) => asset.name.endsWith('.exe'));
+            
+            if (dmgAsset) {
+              setMacDownloadUrl(dmgAsset.browser_download_url);
+            }
+            if (exeAsset) {
+              setWinDownloadUrl(exeAsset.browser_download_url);
+            } else {
+              const versionNum = data.tag_name.replace(/^v/, '');
+              setWinDownloadUrl(`https://github.com/rjbtechconsult/piik/releases/download/${data.tag_name}/Piik_${versionNum}_x64-setup.exe`);
+            }
           }
         }
       })
