@@ -58,6 +58,6 @@ jobs:
           tagName: v__VERSION__ # tauri-action replaces this with the version from tauri.conf.json
           releaseName: 'Piik v__VERSION__'
           releaseBody: 'New release of Piik'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
